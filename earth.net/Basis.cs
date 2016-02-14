@@ -15,11 +15,18 @@ namespace earth.net
         {
             get { return Hinges.Count; }
         }
+
         public Basis(Basis parent, Hinge hinge)
         {
             if (parent != null)
                 Hinges.AddRange(parent.Hinges);
 
+            Hinges.Add(hinge);
+        }
+
+        public Basis(List<Hinge> parentHinges, Hinge hinge)
+        {
+            Hinges.AddRange(parentHinges);
             Hinges.Add(hinge);
         }
 
@@ -48,6 +55,20 @@ namespace earth.net
         }
 
         public List<Hinge> Hinges = new List<Hinge>();
+    }
+
+    public class HingePair
+    {
+        Hinge Positive { get; set; }
+        Hinge Negative { get; set; }
+        
+        public HingePair(Hinge positive) : this(positive, positive.ConstructNegative()){ }
+
+        public HingePair(Hinge positive, Hinge negative)
+        {
+            Positive = positive;
+            Negative = negative;
+        }
     }
 
 }

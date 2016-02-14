@@ -28,6 +28,15 @@ namespace earth.net
 
         double[][] _values = null;
 
+        public List<string> GetRegressors(string y)
+        {
+            if (_variables == null)
+                _variables = (from DataColumn dc in _dt.Columns
+                              where dc.DataType == typeof(double) && dc.ColumnName != y
+                              select dc.ColumnName).ToList();
+            return _variables;
+        }
+
         public double[][] Values
         {
             get
@@ -113,30 +122,59 @@ namespace earth.net
 
             //hinge test
             var xs = GetX("mpg");
+
+            //Hinge h = new Hinge(0, 3.7);
+            //var b0 = new Basis(null, null, 1.0);
             
-            m.AddBasis(new Basis(null, null, 1.0));
-            m.AddBasis(new Basis(m.Basises[0], 0, 3.7));
-            m.AddBasis(new Basis(m.Basises[1], 0, 5.2));
+            //var b1 = new Basis(b0, h);
+            //var b1Reflected = new Basis(b0, h.ConstructNegative());
+            
+
+            //m.AddBasis(b0, null);
+            //m.AddBasis(b1, b1Reflected);
 
             
             int MaxTerms = 100;
             //B0
-            m.Basises.Add(new Basis(null, null, 1.0));
+            m.AddBasis(new Basis(null, null, 1.0), null);
             do
             {
                 for (int i = 0; i < m.Basises.Count; i++)
                 {
-                    for (int j = 0; j < Variables.Count; j++)
+                    double PotentialRSS = 10000000.0;
+                    int varN = 0;
+                    int valN = 0;
+
+                    for (int j = 0; j < GetRegressors(value).Count; j++)
                     { 
                         if (m.Basises[i].TermsCount >= MaxTerms)
                             break;
                         
                         for (int k = 0; k < Values.Length; k++)
                         {
-                            Basis newBasis = new Basis(m.Basises[i], j, Values[k][j]);
-                            m.Basises.Add(newBasis);
+                            Hinge h = new Hinge(j, Values[k][j]);
+                            Hinge hReflected = h.ConstructNegative();
+
+                            Basis b = new Basis(m.Basises[i], h);
+                            Basis bReflected = new Basis(m.Basises[i], hReflected);
+
+                            double rss = m.CheckNewBasis(b, bReflected);
+                            if (rss < PotentialRSS)
+                            {
+                                PotentialRSS = rss;
+                                varN = j;
+                                valN = k;
+                            }
                         }
                     }
+
+                    Hinge winnerHinge = new Hinge(varN, Values[valN][varN]);
+                    Hinge winnerHingeReflected = winnerHinge.ConstructNegative();
+
+                    Basis winnerBasis = new Basis(m.Basises[i], winnerHinge);
+                    Basis winnerBasisReflected = new Basis(m.Basises[i], winnerHingeReflected);
+
+                    m.AddBasis(winnerBasis, winnerBasisReflected);
                 }
             }
             while (true);

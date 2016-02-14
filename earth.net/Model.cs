@@ -30,9 +30,13 @@ namespace earth.net
             }
         }
 
-        public void AddBasis(Basis b)
+        public void AddBasis(Basis b, Basis bReflected)
         {
             _basises.Add(b);
+
+            //когда добавляется константа
+            if(bReflected != null)
+                _basises.Add(bReflected);
             Recalc();
         }
 
@@ -44,15 +48,25 @@ namespace earth.net
         private List<double> _regressionCoefficients;
         //public double[] YTransformed { get; set; }
 
-        public double CheckNewBasis(Basis basis)
+        public double CheckNewBasis(Basis basis, Basis basisReflected)
         {
-            List<Basis> tempNewBasises = new List<Basis>(this.Basises);
-            tempNewBasises.Add(basis);
-            var transformedData = Recalc(tempNewBasises, Regressors);
-            var tempNewRegressionCoefficients = RegressionToolkit.CalculateLeastSquares(transformedData, Y);
-            var tempNewpredicted = RegressionToolkit.Predict(tempNewRegressionCoefficients.ToArray(), transformedData);
-            var tempNewRSS = RegressionToolkit.calcRSS(tempNewpredicted.ToArray(), Y);
-            return tempNewRSS - _RSS;
+            try
+            {
+                List<Basis> tempNewBasises = new List<Basis>(this.Basises);
+
+                tempNewBasises.Add(basis);
+                tempNewBasises.Add(basisReflected);
+
+                var transformedData = Recalc(tempNewBasises, Regressors);
+                var tempNewRegressionCoefficients = RegressionToolkit.CalculateLeastSquares(transformedData, Y);
+                var tempNewpredicted = RegressionToolkit.Predict(tempNewRegressionCoefficients.ToArray(), transformedData);
+                var tempNewRSS = RegressionToolkit.calcRSS(tempNewpredicted.ToArray(), Y);
+                return tempNewRSS - _RSS;
+            }
+            catch
+            {
+                return 10000000000000.0;
+            }
 
         }
 
