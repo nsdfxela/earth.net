@@ -141,7 +141,10 @@ namespace earth.net
             {
                 for (int i = 0; i < m.Basises.Count; i++)
                 {
-                    double PotentialRSS = 10000000.0;
+                    double PotentialRSS = m.RSS;
+
+                    bool betterFound = false;
+
                     int varN = 0;
                     int valN = 0;
 
@@ -164,17 +167,21 @@ namespace earth.net
                                 PotentialRSS = rss;
                                 varN = j;
                                 valN = k;
+                                betterFound = true;
                             }
                         }
                     }
 
-                    Hinge winnerHinge = new Hinge(varN, Values[valN][varN]);
-                    Hinge winnerHingeReflected = winnerHinge.ConstructNegative();
+                    if (betterFound)
+                    {
+                        Hinge winnerHinge = new Hinge(varN, Values[valN][varN]);
+                        Hinge winnerHingeReflected = winnerHinge.ConstructNegative();
 
-                    Basis winnerBasis = new Basis(m.Basises[i], winnerHinge);
-                    Basis winnerBasisReflected = new Basis(m.Basises[i], winnerHingeReflected);
+                        Basis winnerBasis = new Basis(m.Basises[i], winnerHinge);
+                        Basis winnerBasisReflected = new Basis(m.Basises[i], winnerHingeReflected);
 
-                    m.AddBasis(winnerBasis, winnerBasisReflected);
+                        m.AddBasis(winnerBasis, winnerBasisReflected);
+                    }
                 }
             }
             while (true);

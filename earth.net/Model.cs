@@ -44,14 +44,19 @@ namespace earth.net
         public double[] Y { get; set; }
         public double[][] RegressorsTransformed { get; set; }
         
+        public double RSS
+        {
+            get { return _RSS; }
+        }
+
         private double _RSS;
         private List<double> _regressionCoefficients;
         //public double[] YTransformed { get; set; }
 
         public double CheckNewBasis(Basis basis, Basis basisReflected)
         {
-            try
-            {
+            //try
+            //{
                 List<Basis> tempNewBasises = new List<Basis>(this.Basises);
 
                 tempNewBasises.Add(basis);
@@ -61,12 +66,12 @@ namespace earth.net
                 var tempNewRegressionCoefficients = RegressionToolkit.CalculateLeastSquares(transformedData, Y);
                 var tempNewpredicted = RegressionToolkit.Predict(tempNewRegressionCoefficients.ToArray(), transformedData);
                 var tempNewRSS = RegressionToolkit.calcRSS(tempNewpredicted.ToArray(), Y);
-                return tempNewRSS - _RSS;
-            }
-            catch
-            {
-                return 10000000000000.0;
-            }
+                return tempNewRSS;
+            //}
+            //catch
+            //{
+            //    return 10000000000000.0;
+            //}
 
         }
 
