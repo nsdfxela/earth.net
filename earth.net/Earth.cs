@@ -28,11 +28,17 @@ namespace earth.net
 
         double[][] _values = null;
 
+        /// <summary>
+        /// Переписать нахуй эту корягу
+        /// </summary>
+        /// <param name="y"></param>
+        /// <returns></returns>
         public List<string> GetRegressors(string y)
         {
             if (_variables == null)
                 _variables = (from DataColumn dc in _dt.Columns
-                              where dc.DataType == typeof(double) && dc.ColumnName != y
+                              where (dc.DataType == typeof(double) || dc.DataType == typeof(int)) 
+                                && dc.ColumnName != y
                               select dc.ColumnName).ToList();
             return _variables;
         }
@@ -148,8 +154,14 @@ namespace earth.net
                     int varN = 0;
                     int valN = 0;
 
+
+                    //There is one restriction put on the formation of model terms: each input
+                    //can appear at most once in a product.
                     for (int j = 0; j < GetRegressors(value).Count; j++)
-                    { 
+                    {
+                        if (m.Basises[i].IsInputAppearsInProduct(j))
+                            continue;
+
                         if (m.Basises[i].TermsCount >= MaxTerms)
                             break;
                         

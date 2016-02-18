@@ -66,6 +66,7 @@ namespace earth.net
                 var tempNewRegressionCoefficients = RegressionToolkit.CalculateLeastSquares(transformedData, Y);
                 var tempNewpredicted = RegressionToolkit.Predict(tempNewRegressionCoefficients.ToArray(), transformedData);
                 var tempNewRSS = RegressionToolkit.calcRSS(tempNewpredicted.ToArray(), Y);
+                
                 return tempNewRSS;
             //}
             //catch

@@ -55,6 +55,17 @@ namespace earth.net
         }
 
         public List<Hinge> Hinges = new List<Hinge>();
+
+        /// <summary>
+        /// There is one restriction put on the formation of model terms: each input
+        ///can appear at most once in a product.
+        /// </summary>
+        /// <param name="variableNumber">Number of variable</param>
+        /// <returns></returns>
+        internal bool IsInputAppearsInProduct(int variableNumber)
+        {
+            return Hinges.Any(h => h.Variable == variableNumber);
+        }
     }
 
     public class HingePair

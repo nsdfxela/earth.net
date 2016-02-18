@@ -19,6 +19,15 @@ namespace earth.net
         
         public double Calc(double x)
         {
+            if (Negative && x >= Value)
+                return 0;
+
+            if (!Negative && x <= Value)
+                return 0;
+
+            if (Variable == null)
+                return 1.0;
+
             return (Negative? -1 : +1) *( x - Value );
         }
 
@@ -27,7 +36,7 @@ namespace earth.net
             Hinge h = new Hinge();
             h.Value = this.Value;
             h.Variable = this.Variable;
-            h.Negative = !this.Negative;
+            h.Negative = true;
             return h;
         }
 

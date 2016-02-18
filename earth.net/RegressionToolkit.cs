@@ -40,16 +40,25 @@ namespace earth.net
 
         public static List<double> CalculateLeastSquares(double[][] x, double[] y)
         {
+            double[] slopes = null;
             try
             {
                 
-                var slopes = MultipleRegression.QR(x, y, true);
+                slopes = MultipleRegression.QR(x, y, true);
+
+                if (slopes.Any(s => double.IsNaN(s)))
+                {
+                    for (int i = 0; i < slopes.Length; i++)
+                        if (double.IsInfinity(slopes[i]) || double.IsNaN(slopes[i]))
+                            slopes[i] = 0.0;
+                }
                 return slopes.ToList();
             }
             catch
             {
                 Console.WriteLine(DoubleToR(x));
                 Console.WriteLine(DoubleToR(y));
+                Console.WriteLine(slopes);
                 return null;
             }
         }
