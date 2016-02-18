@@ -11,7 +11,7 @@ namespace earth.net
     /// </summary>
     public class Basis
     {
-        public int TermsCount
+        public int HingesCount
         {
             get { return Hinges.Count; }
         }

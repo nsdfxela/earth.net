@@ -101,6 +101,16 @@ namespace earth.net
             _dt = dt;
         }
 
+        /// <summary>
+        /// Detect if it is enough terms in the model
+        /// </summary>
+        /// <returns></returns>
+        private bool ForwardPassStopCondition()
+        {
+
+            return false;
+        }
+
         public List<double> CalculateLeastSquares(string ycolName)
         {
             var x = GetX(ycolName);
@@ -109,16 +119,12 @@ namespace earth.net
             return RegressionToolkit.CalculateLeastSquares(x, y);
         }
 
-        
-
-        
-      
-
         Model m ;
 
         public List<double> Predict(string value)
         {
             m = new Model(GetX(value), GetColumnDouble("mpg").ToArray());
+            
             
             //var c = CalculateLeastSquares("mpg").ToArray();
             //var predicted = RegressionToolkit.Predict(c, GetX(value));
@@ -129,22 +135,17 @@ namespace earth.net
             //hinge test
             var xs = GetX("mpg");
 
-            //Hinge h = new Hinge(0, 3.7);
-            //var b0 = new Basis(null, null, 1.0);
             
-            //var b1 = new Basis(b0, h);
-            //var b1Reflected = new Basis(b0, h.ConstructNegative());
+            int MAX_HINGES_IN_BASIS = 30;
+            int MAX_BASISES = 100;
             
-
-            //m.AddBasis(b0, null);
-            //m.AddBasis(b1, b1Reflected);
-
-            
-            int MaxTerms = 100;
             //B0
             m.AddBasis(new Basis(null, null, 1.0), null);
+
             do
             {
+                int solutions = 0;    
+
                 for (int i = 0; i < m.Basises.Count; i++)
                 {
                     double PotentialRSS = m.RSS;
@@ -162,7 +163,7 @@ namespace earth.net
                         if (m.Basises[i].IsInputAppearsInProduct(j))
                             continue;
 
-                        if (m.Basises[i].TermsCount >= MaxTerms)
+                        if (m.Basises[i].HingesCount >= MAX_HINGES_IN_BASIS)
                             break;
                         
                         for (int k = 0; k < Values.Length; k++)
@@ -186,6 +187,7 @@ namespace earth.net
 
                     if (betterFound)
                     {
+                        solutions++;
                         Hinge winnerHinge = new Hinge(varN, Values[valN][varN]);
                         Hinge winnerHingeReflected = winnerHinge.ConstructNegative();
 
@@ -195,6 +197,11 @@ namespace earth.net
                         m.AddBasis(winnerBasis, winnerBasisReflected);
                     }
                 }
+                
+
+                if (solutions == 0) break; //no solutions anymore which decrease RSS
+                if (m.Basises.Count >= MAX_BASISES) break; 
+                if (m.Basises.Any(b => b.HingesCount > MAX_HINGES_IN_BASIS)) break;
             }
             while (true);
 
