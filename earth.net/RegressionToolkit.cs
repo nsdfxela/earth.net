@@ -66,7 +66,7 @@ namespace earth.net
         public static string DoubleToR(double [][]x)
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append("mtrx <- as.matrix(c(");
+            sb.Append("mtrx <- matrix(c(");
 
             for (int i = 0; i < x.Length; i++)
                 for (int j = 0; j < x[i].Length; j++)
@@ -75,8 +75,8 @@ namespace earth.net
                 }
 
             sb = new StringBuilder( sb.ToString().TrimEnd(new char[] {','}));
-            sb.Append("))");
-            sb.AppendLine(string.Format("dim(mtrx) <- c({0},{1})", x.Length, x[0].Length));
+
+            sb.Append(string.Format("), nrow ={0}, byrow=TRUE)", x.Length));
             
             return sb.ToString();
         }

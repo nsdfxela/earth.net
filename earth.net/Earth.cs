@@ -4,6 +4,7 @@ using MathNet.Numerics.LinearAlgebra.Double;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -205,7 +206,49 @@ namespace earth.net
             }
             while (true);
 
-            return new List<double>();
+
+            //Pruning pass
+            
+            
+            double [] GCVs = new double[m.Basises.Count];
+
+            using (System.IO.StreamWriter t = new StreamWriter("output.txt"))
+            {
+
+                t.WriteLine(RegressionToolkit.DoubleToR(m.RegressorsTransformed));
+                t.WriteLine(RegressionToolkit.DoubleToR(m.Y));
+            }
+
+            do
+            {
+
+                double lowestGCV = 1000000.0;
+                int lowestGCVIndex = 1;
+                Basis[] tempBasises = new Basis[m.Basises.Count];
+                m.Basises.CopyTo(tempBasises);
+
+                for (int i = 1; i < m.Basises.Count; i++)
+                {
+                    m.RemoveBasisAt(i);
+                    if (m.GCV < lowestGCV)
+                    {
+                        lowestGCV = m.GCV;
+                        lowestGCVIndex = i;
+                    }
+                    m.ResetBasis(tempBasises);
+                    //using (System.IO.StreamWriter t = new StreamWriter("output.txt"))
+                    //{
+                    //    t.WriteLine(RegressionToolkit.DoubleToR(m.RegressorsTransformed));
+                    //}
+                }
+                m.RemoveBasisAt(lowestGCVIndex);
+                
+                if (m.Basises.Count == 3)
+                    break;
+            }
+            while (true);
+
+                return new List<double>();
         }
     }
 }

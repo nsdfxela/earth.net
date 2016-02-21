@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -30,6 +31,19 @@ namespace earth.net
             }
         }
 
+        public void AddBasis(Basis b)
+        {
+            _basises.Add(b);
+            Recalc();
+        }
+
+        public void ResetBasis(IEnumerable<Basis> b)
+        {
+            _basises.Clear();
+            _basises.AddRange(b);
+            Recalc();
+        }
+
         public void AddBasis(Basis b, Basis bReflected)
         {
             _basises.Add(b);
@@ -40,6 +54,12 @@ namespace earth.net
             Recalc();
         }
 
+        public void RemoveBasisAt(int basisNumber)
+        {
+            _basises.RemoveAt(basisNumber);
+            Recalc();
+        }
+
         public double[][] Regressors { get; set; }
         public double[] Y { get; set; }
         public double[][] RegressorsTransformed { get; set; }
@@ -47,6 +67,27 @@ namespace earth.net
         public double RSS
         {
             get { return _RSS; }
+        }
+
+        public double GCV
+        {
+            get 
+            {
+                int nBas = this.Basises.Count;
+                int nP = Y.Length;
+
+                double effNum = nBas + 3 * (nBas - 1) / 2;
+                return _RSS /  (nP * Math.Pow( (1-effNum/nP), 2.0));
+            }
+        }
+
+        public double RSq()
+        {
+            // is 1-rss/tss
+            // where tss = sum((y-mean(y))^2)
+
+            var yAvg = Y.Average();
+            return 1 - _RSS / (Y.Select(y => Math.Pow( y - yAvg, 2)).Sum());
         }
 
         private double _RSS;
