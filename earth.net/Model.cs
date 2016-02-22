@@ -83,14 +83,11 @@ namespace earth.net
 
         public double RSq()
         {
-            // is 1-rss/tss
-            // where tss = sum((y-mean(y))^2)
-
-            var yAvg = Y.Average();
-            return 1 - _RSS / (Y.Select(y => Math.Pow( y - yAvg, 2)).Sum());
+            return _RSq;
         }
 
         private double _RSS;
+        private double _RSq;
         private List<double> _regressionCoefficients;
         //public double[] YTransformed { get; set; }
 
@@ -106,7 +103,7 @@ namespace earth.net
                 var transformedData = Recalc(tempNewBasises, Regressors);
                 var tempNewRegressionCoefficients = RegressionToolkit.CalculateLeastSquares(transformedData, Y);
                 var tempNewpredicted = RegressionToolkit.Predict(tempNewRegressionCoefficients.ToArray(), transformedData);
-                var tempNewRSS = RegressionToolkit.calcRSS(tempNewpredicted.ToArray(), Y);
+                var tempNewRSS = RegressionToolkit.CalcRSS(tempNewpredicted.ToArray(), Y);
                 
                 return tempNewRSS;
             //}
@@ -122,7 +119,8 @@ namespace earth.net
            RegressorsTransformed = Recalc(this.Basises, Regressors);
            _regressionCoefficients = RegressionToolkit.CalculateLeastSquares(RegressorsTransformed, Y);
            var predicted = RegressionToolkit.Predict(_regressionCoefficients.ToArray(), RegressorsTransformed);
-           _RSS = RegressionToolkit.calcRSS(predicted.ToArray(), Y);
+           _RSS = RegressionToolkit.CalcRSS(predicted.ToArray(), Y);
+           _RSq = RegressionToolkit.CalcRSq(predicted.ToArray(), Y);
         }
 
         public double[][] Recalc(List<Basis> basises, double[][] regressors)

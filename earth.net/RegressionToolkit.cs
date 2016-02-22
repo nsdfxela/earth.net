@@ -11,7 +11,7 @@ namespace earth.net
 {
     class RegressionToolkit
     {
-        public static double calcRSS(double[] yhat, double[] y)
+        public static double CalcRSS(double[] yhat, double[] y)
         {
             double result = 0.0;
 
@@ -23,6 +23,12 @@ namespace earth.net
             return result;
         }
 
+        public static double CalcRSq(double[] yhat, double[] y)
+        {
+            var rss = CalcRSS(yhat, y);
+            var yAvg = y.Average();
+            return 1 - rss / (y.Select(v => Math.Pow(v - yAvg, 2)).Sum());
+        }
 
         public static List<double> Predict(double[] caffs, double[][] xValues)
         {
