@@ -34,13 +34,8 @@ namespace earth.net
         {
             Matrix<double> x = Matrix<double>.Build.DenseOfRowArrays(xValues);
             Matrix<double> k = Matrix<double>.Build.DenseOfColumnArrays(caffs);
-            var b = k.Row(0);
-            k = k.RemoveRow(0);
             var resultMatrix = x * k;
             List<double> result = resultMatrix.Column(0).ToList();
-            for (int i = 0; i < result.Count; i++)
-                result[i] = result[i] + b[0];
-
             return result;
         }
 
@@ -50,7 +45,7 @@ namespace earth.net
             try
             {
                 
-                slopes = MultipleRegression.QR(x, y, true);
+                slopes = MultipleRegression.QR(x, y, false);
 
                 if (slopes.Any(s => double.IsNaN(s)))
                 {
