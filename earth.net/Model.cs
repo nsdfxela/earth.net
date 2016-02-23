@@ -81,9 +81,12 @@ namespace earth.net
             }
         }
 
-        public double RSq()
+        public double RSq
         {
-            return _RSq;
+            get
+            {
+                return _RSq;
+            }
         }
 
         private double _RSS;
@@ -93,8 +96,6 @@ namespace earth.net
 
         public double CheckNewBasis(Basis basis, Basis basisReflected)
         {
-            //try
-            //{
                 List<Basis> tempNewBasises = new List<Basis>(this.Basises);
 
                 tempNewBasises.Add(basis);
@@ -106,12 +107,41 @@ namespace earth.net
                 var tempNewRSS = RegressionToolkit.CalcRSS(tempNewpredicted.ToArray(), Y);
                 
                 return tempNewRSS;
-            //}
-            //catch
-            //{
-            //    return 10000000000000.0;
-            //}
+        }
 
+        public double CheckNewBasisFast(Basis basis, Basis basisReflected, double newKnotVal, ref double [][] transformedData)
+        {
+            if (transformedData == null)
+            {
+                List<Basis> tempNewBasises = new List<Basis>(this.Basises);
+                tempNewBasises.Add(basis);
+                tempNewBasises.Add(basisReflected);
+                transformedData = Recalc(tempNewBasises, Regressors);
+            }
+            else
+            {
+
+                int ncol = transformedData[0].Length;
+                int nrow = transformedData.Length;
+
+                for (int i = 0; i < nrow; i++)
+                {
+                    double[] newdata = new double[ncol + 2];
+
+                    for (int j = 0; j < ncol; j++)
+                    {
+                        newdata[j] = transformedData[i][j];
+                    }
+                    newdata[ncol] = basis.Calc(Regressors[i]);
+                    newdata[ncol + 1] = basisReflected.Calc(Regressors[i]);
+                }
+            }
+
+            var tempNewRegressionCoefficients = RegressionToolkit.CalculateLeastSquares(transformedData, Y);
+            var tempNewpredicted = RegressionToolkit.Predict(tempNewRegressionCoefficients.ToArray(), transformedData);
+            var tempNewRSS = RegressionToolkit.CalcRSS(tempNewpredicted.ToArray(), Y);
+
+            return tempNewRSS;
         }
 
         public void Recalc()

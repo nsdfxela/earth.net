@@ -166,16 +166,22 @@ namespace earth.net
 
                         if (m.Basises[i].HingesCount >= MAX_HINGES_IN_BASIS)
                             break;
-                        
+
+                        Hinge h = new Hinge(j, 0.0);
+                        Hinge hReflected = h.ConstructNegative();
+
+                        Basis b = new Basis(m.Basises[i], h);
+                        Basis bReflected = new Basis(m.Basises[i], hReflected);
+
+                        double[][] bData = null;
+
                         for (int k = 0; k < Values.Length; k++)
                         {
-                            Hinge h = new Hinge(j, Values[k][j]);
-                            Hinge hReflected = h.ConstructNegative();
+                            h.Value = Values[k][j];
+                            hReflected.Value = Values[k][j];
 
-                            Basis b = new Basis(m.Basises[i], h);
-                            Basis bReflected = new Basis(m.Basises[i], hReflected);
-
-                            double rss = m.CheckNewBasis(b, bReflected);
+                            double rss = m.CheckNewBasisFast(b, bReflected, 0.0, ref bData);
+                            //double rss = m.CheckNewBasis(b, bReflected);
                             if (rss < PotentialRSS)
                             {
                                 PotentialRSS = rss;
