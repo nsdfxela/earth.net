@@ -183,14 +183,17 @@ namespace earth.net
                             double rss = m.CheckNewBasisFast(b, bReflected, 0.0, ref bData);
 
                             //Orth-testin
-                            double[][] tc = new double[32][];
-                            for (int z = 0; z < tc.Length; z++ )
+                            if (m.Basises.Count > 5)
                             {
-                                tc[z]= new double[m.Basises.Count];
+                                double[][] tc = new double[32][];
+                                for (int z = 0; z < tc.Length; z++)
+                                {
+                                    tc[z] = new double[m.Basises.Count];
+                                }
+
+                                for (int q = 0; q < m.Basises.Count; q++)
+                                    m.CalcOrthColumn(ref tc, q);
                             }
-                                m.CalcOrthColumn(ref tc, 0);
-                                m.CalcOrthColumn(ref tc, 1);
-                                m.CalcOrthColumn(ref tc, 2);
                             //Orth-testin
 
                             //double rss = m.CheckNewBasis(b, bReflected);

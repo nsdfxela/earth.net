@@ -153,6 +153,20 @@ namespace earth.net
            _RSq = RegressionToolkit.CalcRSq(predicted.ToArray(), Y);
         }
 
+
+        private double[] getColumn(double[][] matrix, int c)
+        {
+            //needfaster begin
+            List<double> col = new List<double>();
+            for (int i = 0; i < matrix.Length;i++ )
+                col.Add(matrix[i][c]);
+            return col.ToArray();
+            //needfaster end
+        }
+
+        List<double> bxOrthMean = new List<double>();
+        
+
         public void CalcOrthColumn(ref double[][] bxOrth, int newColumnAt)
         {
             int nTerms = newColumnAt;
@@ -163,27 +177,62 @@ namespace earth.net
                 double len = 1 / Math.Sqrt((double)nCases);
                 for (int i = 0; i < nCases; i++)
                 {
-                    bxOrth[i][0] = len;                     
+                    bxOrth[i][nTerms] = len;                     
                 }
+                bxOrthMean.Add(len);
             }
             else if (nTerms == 1)
             {
                 double yMean = Y.Average();                
                 for (int i = 0; i < nCases; i++)
-                    bxOrth[i][0] = Y[i] - yMean;
+                    bxOrth[i][nTerms] = Y[i] - yMean;
             }
             // resids go in rightmost col of bxOrth at nTerms
             else
             {
+                //needfaster begin
+                for (int p = 0; p < bxOrth.Length; p++)
+                    bxOrth[p][newColumnAt] = Y[p];
+                //needfaster end
+   
                 for (int iTerm = 0; iTerm < nTerms; iTerm++)
                 {
-                    var pbxOrth = bxOrth[iTerm];
-                    double xty = 0;
+                    double Beta;
+                    var pbxOrth = getColumn(bxOrth, iTerm);
+                    double xty = 0.0;
                     for (int i = 0; i < nCases; i++)
-                        xty += pbxOrth[i] * Y[i]; // see header comment
+                        xty += pbxOrth[i] * Y[i];
+                    Beta = xty;
+
+                    for (int i = 0; i < nCases; i++)
+                        bxOrth[i][newColumnAt] -= Beta * pbxOrth[i];
                 }
             }
+            // normalize the column to length 1 and init bxOrthMean[nTerms]
+            if (nTerms > 0)
+            {
+                double bxOrthSS = SumOfSquares(getColumn(bxOrth, nTerms), nCases);
+                
+                if (bxOrthMean.Count - 1 != nTerms)
+                    bxOrthMean.Add(0.0);
 
+                bxOrthMean[nTerms] = getColumn(bxOrth, nTerms).Average();
+
+                double len = Math.Sqrt(bxOrthSS);
+                for(int i = 0; i < nCases; i++)
+                    bxOrth[i][nTerms] /= len;
+            }
+        }
+
+        //-----------------------------------------------------------------------------
+        // get mean centered sum of squares
+        static double SumOfSquares(double [] x, double mean)
+        {
+            double ss = 0;
+            //for(size_t i = 0; i < n; i++)
+            for (int i = 0; i < x.Length; i++)
+                ss += Math.Pow((x[i] - mean), 2.0);
+            return ss;
         }
 
         public double[][] Recalc(List<Basis> basises, double[][] regressors)
