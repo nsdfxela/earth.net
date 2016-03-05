@@ -181,6 +181,18 @@ namespace earth.net
                             hReflected.Value = Values[k][j];
 
                             double rss = m.CheckNewBasisFast(b, bReflected, 0.0, ref bData);
+
+                            //Orth-testin
+                            double[][] tc = new double[32][];
+                            for (int z = 0; z < tc.Length; z++ )
+                            {
+                                tc[z]= new double[m.Basises.Count];
+                            }
+                                m.CalcOrthColumn(ref tc, 0);
+                                m.CalcOrthColumn(ref tc, 1);
+                                m.CalcOrthColumn(ref tc, 2);
+                            //Orth-testin
+
                             //double rss = m.CheckNewBasis(b, bReflected);
                             if (rss < PotentialRSS)
                             {

@@ -153,6 +153,39 @@ namespace earth.net
            _RSq = RegressionToolkit.CalcRSq(predicted.ToArray(), Y);
         }
 
+        public void CalcOrthColumn(ref double[][] bxOrth, int newColumnAt)
+        {
+            int nTerms = newColumnAt;
+            int nCases = bxOrth.Length;
+
+            if (nTerms == 0)
+            {
+                double len = 1 / Math.Sqrt((double)nCases);
+                for (int i = 0; i < nCases; i++)
+                {
+                    bxOrth[i][0] = len;                     
+                }
+            }
+            else if (nTerms == 1)
+            {
+                double yMean = Y.Average();                
+                for (int i = 0; i < nCases; i++)
+                    bxOrth[i][0] = Y[i] - yMean;
+            }
+            // resids go in rightmost col of bxOrth at nTerms
+            else
+            {
+                for (int iTerm = 0; iTerm < nTerms; iTerm++)
+                {
+                    var pbxOrth = bxOrth[iTerm];
+                    double xty = 0;
+                    for (int i = 0; i < nCases; i++)
+                        xty += pbxOrth[i] * Y[i]; // see header comment
+                }
+            }
+
+        }
+
         public double[][] Recalc(List<Basis> basises, double[][] regressors)
         {
             double [][] resultDataset;
