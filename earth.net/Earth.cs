@@ -1,6 +1,7 @@
 ﻿using MathNet.Numerics;
 using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
+using MathNet.Numerics.LinearRegression;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -183,16 +184,23 @@ namespace earth.net
                             double rss = m.CheckNewBasisFast(b, bReflected, 0.0, ref bData);
 
                             //Orth-testin
-                            if (m.Basises.Count > 5)
+                            if (m.Basises.Count > 6)
                             {
-                                double[][] tc = new double[32][];
-                                for (int z = 0; z < tc.Length; z++)
+                                double[][] bxOrth = new double[32][];
+                                for (int z = 0; z < bxOrth.Length; z++)
                                 {
-                                    tc[z] = new double[m.Basises.Count];
+                                    bxOrth[z] = new double[m.Basises.Count];
                                 }
 
                                 for (int q = 0; q < m.Basises.Count; q++)
-                                    m.CalcOrthColumn(ref tc, q);
+                                {
+                                    var _y = m.__getColumn(m.RegressorsTransformed, q);
+                                    m.CalcOrthColumn(ref bxOrth, _y, q);
+                                }
+                                var v = m.__calcV(bxOrth);
+                                var c = m.__calcC(bxOrth);
+                                var a = Fit.LinearMultiDim(v, c);
+                                
                             }
                             //Orth-testin
 

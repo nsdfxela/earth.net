@@ -73,7 +73,7 @@ namespace earth.net
                 for (int j = 0; j < x[i].Length; j++)
                 {
                     sb.Append(String.Format(" {0},", x[i][j].ToString().Replace(',','.') ));
-                }
+                }   
 
             sb = new StringBuilder( sb.ToString().TrimEnd(new char[] {','}));
 

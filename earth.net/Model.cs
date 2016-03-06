@@ -154,7 +154,7 @@ namespace earth.net
         }
 
 
-        private double[] getColumn(double[][] matrix, int c)
+        public double[] __getColumn(double[][] matrix, int c)
         {
             //needfaster begin
             List<double> col = new List<double>();
@@ -166,8 +166,44 @@ namespace earth.net
 
         List<double> bxOrthMean = new List<double>();
         
+        public double[] __calcC(double[][] bxOrth)
+        {
+            var b = bxOrth[0].Length;
+            double[] c = new double[b];
+            double yAvg = Y.Average();
 
-        public void CalcOrthColumn(ref double[][] bxOrth, int newColumnAt)
+            for (int k = 0; k < bxOrth.Length; k++)
+            {
+
+                for (int i = 0; i < b; i++)
+                {
+                    c[i] += (Y[k] - yAvg) * bxOrth[k][i];
+                }
+            }
+            return c;
+        }
+
+        public double[][] __calcV(double[][] bxOrth)
+        {
+            var b = bxOrth[0].Length;
+            double[][] v = new double[b][];
+            for (int i = 0; i < b; i++)
+                v[i] = new double[b];
+
+            for (int k = 0; k < bxOrth.Length; k++)
+            {
+                for (int i = 0; i < b; i++)
+                {
+                    for (int j = 0; j < b; j++)
+                    {
+                        v[i][j] += bxOrth[k][j] * (bxOrth[k][i] - bxOrthMean[i]);
+                    }
+                }
+            }
+            return v;
+        }
+
+        public void CalcOrthColumn(ref double[][] bxOrth, double[] y, int newColumnAt)
         {
             int nTerms = newColumnAt;
             int nCases = bxOrth.Length;
@@ -183,25 +219,25 @@ namespace earth.net
             }
             else if (nTerms == 1)
             {
-                double yMean = Y.Average();                
+                double yMean = y.Average();                
                 for (int i = 0; i < nCases; i++)
-                    bxOrth[i][nTerms] = Y[i] - yMean;
+                    bxOrth[i][nTerms] = y[i] - yMean;
             }
             // resids go in rightmost col of bxOrth at nTerms
             else
             {
                 //needfaster begin
                 for (int p = 0; p < bxOrth.Length; p++)
-                    bxOrth[p][newColumnAt] = Y[p];
+                    bxOrth[p][newColumnAt] = y[p];
                 //needfaster end
    
                 for (int iTerm = 0; iTerm < nTerms; iTerm++)
                 {
                     double Beta;
-                    var pbxOrth = getColumn(bxOrth, iTerm);
+                    var pbxOrth = __getColumn(bxOrth, iTerm);
                     double xty = 0.0;
                     for (int i = 0; i < nCases; i++)
-                        xty += pbxOrth[i] * Y[i];
+                        xty += pbxOrth[i] * y[i];
                     Beta = xty;
 
                     for (int i = 0; i < nCases; i++)
@@ -211,12 +247,12 @@ namespace earth.net
             // normalize the column to length 1 and init bxOrthMean[nTerms]
             if (nTerms > 0)
             {
-                double bxOrthSS = SumOfSquares(getColumn(bxOrth, nTerms), nCases);
+                double bxOrthSS = SumOfSquares(__getColumn(bxOrth, nTerms), nCases);
                 
                 if (bxOrthMean.Count - 1 != nTerms)
                     bxOrthMean.Add(0.0);
 
-                bxOrthMean[nTerms] = getColumn(bxOrth, nTerms).Average();
+                bxOrthMean[nTerms] = __getColumn(bxOrth, nTerms).Average();
 
                 double len = Math.Sqrt(bxOrthSS);
                 for(int i = 0; i < nCases; i++)
