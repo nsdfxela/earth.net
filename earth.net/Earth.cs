@@ -123,8 +123,12 @@ namespace earth.net
 
         Model m ;
 
+        
+
         public List<double> Predict(string value)
         {
+            double[][] bxOrth = new double[32][];
+
             m = new Model(GetX(value), GetColumnDouble("mpg").ToArray());
             
             
@@ -146,12 +150,16 @@ namespace earth.net
 
             do
             {
-                int solutions = 0;    
+                int solutions = 0;
+
+                double[] CovCol = new double[m.Regressors[0].Length + 1];
+                double[] CovSx = new double[m.Regressors[0].Length + 1];
+                double[] ycboSum = new double[Model.MAX_TERMS_ALLOWED];
 
                 for (int i = 0; i < m.Basises.Count; i++)
                 {
                     double PotentialRSS = m.RSS;
-
+                    
                     bool betterFound = false;
 
                     int varN = 0;
@@ -184,24 +192,38 @@ namespace earth.net
                             double rss = m.CheckNewBasisFast(b, bReflected, 0.0, ref bData);
 
                             //Orth-testin
-                            if (m.Basises.Count > 6)
-                            {
-                                double[][] bxOrth = new double[32][];
-                                for (int z = 0; z < bxOrth.Length; z++)
-                                {
-                                    bxOrth[z] = new double[m.Basises.Count];
-                                }
 
-                                for (int q = 0; q < m.Basises.Count; q++)
-                                {
-                                    var _y = m.__getColumn(m.RegressorsTransformed, q);
-                                    m.CalcOrthColumn(ref bxOrth, _y, q);
-                                }
-                                var v = m.__calcV(bxOrth);
-                                var c = m.__calcC(bxOrth);
-                                var a = Fit.LinearMultiDim(v, c);
-                                
+                            double[][] bx = m.RecalcBx(b, bReflected, 0.0, ref bData);
+                            for (int z = 0; z < bxOrth.Length; z++)
+                            {
+                                List<double> t ;
+                                if(bxOrth[z] != null)
+                                    t = new List<double>(bxOrth[z]);
+                                else
+                                    t = new List<double>();
+                                t.Add(0.0);
+                                bxOrth[z] = t.ToArray();
                             }
+
+                            var _y = m.__getColumn(bx, k);
+                            
+                            m.CalcOrthColumn(ref bxOrth, _y, k);
+
+                                
+                                
+                                int nTerms = m.Basises.Count-1;
+                                
+                                double pRssDeltaLin = 0.0;
+
+                                m.__initYcboSum(nTerms, bxOrth, ref pRssDeltaLin);
+
+                                double ybxSum = 0.0;
+                                int res = m.FindKnot(bxOrth, m.Regressors, m.Y, nTerms, j, i, ref CovCol, ref CovSx, ref ycboSum, ref ybxSum);
+                                
+                                //var v = m.__calcV(bxOrth);
+                                //var c = m.__calcC(bxOrth);
+                                //var a = Fit.LinearMultiDim(v, c);
+                                
                             //Orth-testin
 
                             //double rss = m.CheckNewBasis(b, bReflected);

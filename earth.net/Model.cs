@@ -63,7 +63,9 @@ namespace earth.net
         public double[][] Regressors { get; set; }
         public double[] Y { get; set; }
         public double[][] RegressorsTransformed { get; set; }
-        
+
+       public const int MAX_TERMS_ALLOWED = 100;
+
         public double RSS
         {
             get { return _RSS; }
@@ -107,6 +109,16 @@ namespace earth.net
                 var tempNewRSS = RegressionToolkit.CalcRSS(tempNewpredicted.ToArray(), Y);
                 
                 return tempNewRSS;
+        }
+
+        public double[][] RecalcBx(Basis basis, Basis basisReflected, double newKnotVal, ref double[][] transformedData)
+        {
+            List<Basis> tempNewBasises = new List<Basis>(this.Basises);
+            basis.Hinges.AddRange(basisReflected.Hinges);
+            tempNewBasises.Add(basis);
+            //tempNewBasises.Add(basisReflected);
+            transformedData = Recalc(tempNewBasises, Regressors);
+            return transformedData;
         }
 
         public double CheckNewBasisFast(Basis basis, Basis basisReflected, double newKnotVal, ref double [][] transformedData)
@@ -183,6 +195,29 @@ namespace earth.net
             return c;
         }
 
+        private class comparerArrayOrder : IComparer<KeyValuePair<double, int>>
+        {
+            public int Compare(KeyValuePair<double, int> x, KeyValuePair<double, int> y)
+            {
+                int c = x.Key.CompareTo(y.Key);
+
+                if (c == 0)
+                    return (x.Value.CompareTo(y.Value));
+                else return c;
+            }
+        }
+
+
+        public int[] GetArrayOrder(double[] x)
+        {
+            var uns = x.ToList();
+            SortedDictionary<KeyValuePair<double, int>, int> t = new SortedDictionary<KeyValuePair<double, int>, int>(new comparerArrayOrder());
+            for (int i = 0; i < x.Length; i++)
+                t.Add(new KeyValuePair<double, int>(x[i], i), i);
+           return t.Values.ToArray();
+        }
+
+        
         public double[][] __calcV(double[][] bxOrth)
         {
             var b = bxOrth[0].Length;
@@ -286,6 +321,82 @@ namespace earth.net
                 }
             }
             return resultDataset;
+        }
+
+        public double[] __initYcboSum(int nTerms, double [][] bxOrth, ref double pRssDeltaLin)
+        {
+            int nCases = Regressors.Length;
+            //double[] CovCol = new double[m.RegressorsTransformed.Length + 1];
+            //double[] CovSx = new double[m.RegressorsTransformed.Length + 1];
+            //double[] ycboSum = new double[Model.MAX_TERMS_ALLOWED];
+            double[] ycboSum = new double[Model.MAX_TERMS_ALLOWED];
+            ycboSum[nTerms] = 0;
+            var yMean = Y.Average();
+            for (int i = 0; i < Regressors.Length; i++)
+            {
+                ycboSum[nTerms] += (Y[i] - yMean) * bxOrth[i][nTerms];
+            }
+
+            pRssDeltaLin = 0;
+            double yboSum = 0;
+            for(int i = 0; i < nCases; i++)
+                yboSum += Y[i] * bxOrth[i][nTerms];
+            
+            pRssDeltaLin += Math.Pow(yboSum,2.0);
+
+            return ycboSum;
+        }
+
+
+        internal int FindKnot(double[][] bxOrth, double[][] x, double[] ym, int nTerms, int iPred, int iParent
+            , ref double[] CovCol, ref double[] CovSx, ref double [] ycboSum, ref double ybxSum)
+        {
+            int nCases = bxOrth.Length;
+            var xOrder = this.GetArrayOrder(__getColumn(x, iPred));
+            var bx = RegressorsTransformed;
+            int iNewCol = nTerms;
+
+            double bxSum = 0, bxSqSum = 0, bxSqxSum = 0, bxxSum = 0, st = 0;
+
+            //double[] CovCol = new double[iNewCol + 1];
+            //double[] CovSx = new double[iNewCol + 1];
+
+            for (int i = nCases - 2; i >= 0; i--)
+            {
+                int ix0 = xOrder[i];   // get the x's in descending order
+                double x0 = x[ix0][iPred];       // the knot (printed as Cut in trace prints)
+                int ix1 = xOrder[i+1];
+                double x1 = x[ix1][iPred];      // case next to the cut
+                double bx1 = bx[ix1][iParent];
+                double bxSq = Math.Pow(bx1,2.0);
+                double xDelta = x1 - x0;          // will a lways be non negative
+
+                for (int it = 0; it < iNewCol; it++)
+                {
+                    CovSx[it] += (bxOrth[ix1][it] - bxOrthMean[it]) * bx1;
+                    CovCol[it] += xDelta * CovSx[it];
+                }
+
+                bxSum += bx1;
+                bxSqSum += bxSq;
+                bxxSum += bx1 * x1;
+                bxSqxSum += bxSq * x1;
+                double su = st;
+                st = bxxSum - bxSum * x0;
+                
+                CovCol[iNewCol] += xDelta * (2 * bxSqxSum - bxSqSum * (x0 + x1)) +
+                           (Math.Pow(su,2.0) - Math.Pow(st, 2.0)) / nCases;
+
+                var yMean = this.Y.Average();
+                //if (nResp == 1)
+                {    // treat nResp==1 as a special case, for speed
+                    ybxSum += (this.Y[ix1] - yMean) * bx1;
+                    ycboSum[iNewCol] += xDelta * ybxSum;
+                }
+                
+
+            }
+                return 0;
         }
     }
 }
