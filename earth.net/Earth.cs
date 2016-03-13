@@ -130,7 +130,8 @@ namespace earth.net
 
             
             int MAX_HINGES_IN_BASIS = 30;
-            int MAX_BASISES = 100;
+            int MAX_BASISES = 15;
+            double MAX_DELTA_RSS = 0.00000001;
             
             //B0
             m.AddBasis(new Basis(null, null, 1.0), null);
@@ -175,7 +176,7 @@ namespace earth.net
                             double rss = m.CheckNewBasisCholessky(b, bReflected);
                             Console.WriteLine("Cholessky rss = " + rss);
                             // rss = m.CheckNewBasisFast(b, bReflected, 0.0, ref bData);
-                             Console.WriteLine("Fast rss = " + rss);
+                             //Console.WriteLine("Fast rss = " + rss);
                             //double rss = m.CheckNewBasis(b, bReflected);
                             
                             if (rss < PotentialRSS)
@@ -191,6 +192,7 @@ namespace earth.net
                     if (betterFound)
                     {
                         solutions++;
+                        
                         Hinge winnerHinge = new Hinge(varN, m.Regressors[valN][varN]);
                         Hinge winnerHingeReflected = winnerHinge.ConstructNegative();
 
@@ -198,6 +200,8 @@ namespace earth.net
                         Basis winnerBasisReflected = new Basis(m.Basises[i], winnerHingeReflected);
 
                         m.AddBasis(winnerBasis, winnerBasisReflected);
+                        if (m.Basises.Count >= MAX_BASISES)
+                            break;
                     }
                 }
                 

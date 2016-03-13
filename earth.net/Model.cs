@@ -143,6 +143,25 @@ namespace earth.net
             return tempNewRSS;
         }
 
+        public double[] PrepareAndCalcCholessky(double[][] x, double [] y)
+        {
+            double[] bMeans;
+
+            var v = __calcV(x, out bMeans);
+            var c = __calcC(x);
+
+            for (int i = 0; i < v.Length; i++)
+                v[i][i] += 0.001;
+
+            var regressionCoefficients = RegressionToolkit.CalculateCholesskyRegression(v, c);
+            regressionCoefficients[0] = y.Average();
+
+            for (int i = 1; i < regressionCoefficients.Count; i++)
+                regressionCoefficients[0] -= regressionCoefficients[i] * bMeans[i];
+
+            return regressionCoefficients.ToArray();
+        }
+
         public double CheckNewBasisCholessky(Basis basis, Basis basisReflected)
         {
             List<Basis> tempNewBasises = new List<Basis>(this.Basises);
@@ -151,21 +170,8 @@ namespace earth.net
             tempNewBasises.Add(basisReflected);
 
             var transformedData = Recalc(tempNewBasises, Regressors);
-            
-            double [] bMeans;
 
-            var v = __calcV(transformedData, out bMeans);
-            var c = __calcC(transformedData);
-
-            for (int i = 0; i < v.Length; i++)
-                v[i][i] += 0.001;
-            
-            var tempNewRegressionCoefficients = RegressionToolkit.CalculateCholesskyRegression(v, c);
-            tempNewRegressionCoefficients[0] = Y.Average();
-            
-            for (int i = 1; i < tempNewRegressionCoefficients.Count; i++)
-                tempNewRegressionCoefficients[0] -= tempNewRegressionCoefficients[i] * bMeans[i];
-
+            var tempNewRegressionCoefficients = PrepareAndCalcCholessky(transformedData, Y);
             var tempNewpredicted = RegressionToolkit.Predict(tempNewRegressionCoefficients.ToArray(), transformedData);
             var tempNewRSS = RegressionToolkit.CalcRSS(tempNewpredicted.ToArray(), Y);
 
@@ -175,7 +181,8 @@ namespace earth.net
         public void Recalc()
         {
            RegressorsTransformed = Recalc(this.Basises, Regressors);
-           _regressionCoefficients = RegressionToolkit.CalculateLeastSquares(RegressorsTransformed, Y);
+           //_regressionCoefficients = RegressionToolkit.CalculateLeastSquares(RegressorsTransformed, Y);
+           _regressionCoefficients = PrepareAndCalcCholessky(RegressorsTransformed, Y).ToList();
            var predicted = RegressionToolkit.Predict(_regressionCoefficients.ToArray(), RegressorsTransformed);
            _RSS = RegressionToolkit.CalcRSS(predicted.ToArray(), Y);
            _RSq = RegressionToolkit.CalcRSq(predicted.ToArray(), Y);

@@ -42,6 +42,7 @@ namespace earth.net
         public static List<double> CalculateCholesskyRegression(double [][] v, double [] c)
         {
             double[] slopes = null;
+
             try
             {
                 slopes = MultipleRegression.NormalEquations(v, c, false);
