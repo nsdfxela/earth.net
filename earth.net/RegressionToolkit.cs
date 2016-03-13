@@ -42,7 +42,16 @@ namespace earth.net
         public static List<double> CalculateCholesskyRegression(double [][] v, double [] c)
         {
             double[] slopes = null;
-            slopes = MultipleRegression.NormalEquations(v, c);
+            try
+            {
+                slopes = MultipleRegression.NormalEquations(v, c, false);
+                Console.WriteLine("Ok!");
+            }
+            catch
+            {
+                slopes = MultipleRegression.QR(v, c);
+                Console.WriteLine("Bad!");
+            }
             if (slopes.Any(s => double.IsNaN(s)))
             {
                 for (int i = 0; i < slopes.Length; i++)

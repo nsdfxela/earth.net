@@ -172,9 +172,12 @@ namespace earth.net
                             h.Value = m.Regressors[k][j];
                             hReflected.Value = m.Regressors[k][j];
 
-                            double rss = m.CheckNewBasisFast(b, bReflected, 0.0, ref bData);
+                            double rss = m.CheckNewBasisCholessky(b, bReflected);
+                            Console.WriteLine("Cholessky rss = " + rss);
+                            // rss = m.CheckNewBasisFast(b, bReflected, 0.0, ref bData);
+                             Console.WriteLine("Fast rss = " + rss);
                             //double rss = m.CheckNewBasis(b, bReflected);
-                            //double rss = m.CheckNewBasisCholessky(b, bReflected);
+                            
                             if (rss < PotentialRSS)
                             {
                                 PotentialRSS = rss;

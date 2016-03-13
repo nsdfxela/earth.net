@@ -140,7 +140,6 @@ namespace earth.net
             var tempNewRegressionCoefficients = RegressionToolkit.CalculateLeastSquares(transformedData, Y);
             var tempNewpredicted = RegressionToolkit.Predict(tempNewRegressionCoefficients.ToArray(), transformedData);
             var tempNewRSS = RegressionToolkit.CalcRSS(tempNewpredicted.ToArray(), Y);
-
             return tempNewRSS;
         }
 
@@ -153,10 +152,20 @@ namespace earth.net
 
             var transformedData = Recalc(tempNewBasises, Regressors);
             
-            var v = __calcV(transformedData);
+            double [] bMeans;
+
+            var v = __calcV(transformedData, out bMeans);
             var c = __calcC(transformedData);
+
+            for (int i = 0; i < v.Length; i++)
+                v[i][i] += 0.001;
             
             var tempNewRegressionCoefficients = RegressionToolkit.CalculateCholesskyRegression(v, c);
+            tempNewRegressionCoefficients[0] = Y.Average();
+            
+            for (int i = 1; i < tempNewRegressionCoefficients.Count; i++)
+                tempNewRegressionCoefficients[0] -= tempNewRegressionCoefficients[i] * bMeans[i];
+
             var tempNewpredicted = RegressionToolkit.Predict(tempNewRegressionCoefficients.ToArray(), transformedData);
             var tempNewRSS = RegressionToolkit.CalcRSS(tempNewpredicted.ToArray(), Y);
 
@@ -189,10 +198,10 @@ namespace earth.net
             return c;
         }
 
-        public double[][] __calcV(double[][] bx)
+        public double[][] __calcV(double[][] bx, out double [] means)
         {
             var nFeatures = bx[0].Length;
-            double[] means = new double[nFeatures];
+            means = new double[nFeatures];
             double[][] v = new double[nFeatures][];
             for (int i = 0; i < nFeatures; i++)
                 v[i] = new double[nFeatures];
