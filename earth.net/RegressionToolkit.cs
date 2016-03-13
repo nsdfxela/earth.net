@@ -39,12 +39,25 @@ namespace earth.net
             return result;
         }
 
+        public static List<double> CalculateCholesskyRegression(double [][] v, double [] c)
+        {
+            double[] slopes = null;
+            slopes = MultipleRegression.NormalEquations(v, c);
+            if (slopes.Any(s => double.IsNaN(s)))
+            {
+                for (int i = 0; i < slopes.Length; i++)
+                    if (double.IsInfinity(slopes[i]) || double.IsNaN(slopes[i]))
+                        slopes[i] = 0.0;
+            }
+            return slopes.ToList();
+
+        }
+
         public static List<double> CalculateLeastSquares(double[][] x, double[] y)
         {
             double[] slopes = null;
             try
             {
-                
                 slopes = MultipleRegression.QR(x, y, false);
 
                 if (slopes.Any(s => double.IsNaN(s)))

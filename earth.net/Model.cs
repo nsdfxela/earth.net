@@ -144,6 +144,25 @@ namespace earth.net
             return tempNewRSS;
         }
 
+        public double CheckNewBasisCholessky(Basis basis, Basis basisReflected)
+        {
+            List<Basis> tempNewBasises = new List<Basis>(this.Basises);
+
+            tempNewBasises.Add(basis);
+            tempNewBasises.Add(basisReflected);
+
+            var transformedData = Recalc(tempNewBasises, Regressors);
+            
+            var v = __calcV(transformedData);
+            var c = __calcC(transformedData);
+            
+            var tempNewRegressionCoefficients = RegressionToolkit.CalculateCholesskyRegression(v, c);
+            var tempNewpredicted = RegressionToolkit.Predict(tempNewRegressionCoefficients.ToArray(), transformedData);
+            var tempNewRSS = RegressionToolkit.CalcRSS(tempNewpredicted.ToArray(), Y);
+
+            return tempNewRSS;
+        }
+
         public void Recalc()
         {
            RegressorsTransformed = Recalc(this.Basises, Regressors);
@@ -152,6 +171,50 @@ namespace earth.net
            _RSS = RegressionToolkit.CalcRSS(predicted.ToArray(), Y);
            _RSq = RegressionToolkit.CalcRSq(predicted.ToArray(), Y);
         }
+
+        public double[] __calcC(double[][] bx)
+        {
+            var nFeatures = bx[0].Length;
+            double[] c = new double[nFeatures];
+            double yAvg = Y.Average();
+
+            for (int k = 0; k < bx.Length; k++)
+            {
+
+                for (int i = 0; i < nFeatures; i++)
+                {
+                    c[i] += (Y[k] - yAvg) * bx[k][i];
+                }
+            }
+            return c;
+        }
+
+        public double[][] __calcV(double[][] bx)
+        {
+            var nFeatures = bx[0].Length;
+            double[] means = new double[nFeatures];
+            double[][] v = new double[nFeatures][];
+            for (int i = 0; i < nFeatures; i++)
+                v[i] = new double[nFeatures];
+
+            for (int k = 0; k < bx.Length; k++)
+            {
+                for (int i = 0; i < nFeatures; i++)
+                {
+                    for (int j = 0; j < bx.Length; j++)
+                        means[i] += bx[j][i];
+                    means[i] = means[i] / bx.Length;
+
+                    for (int j = 0; j < nFeatures; j++)
+                    {
+                        v[i][j] += bx[k][j] * (bx[k][i] - means[i]);
+                    }
+                }
+            }
+            return v;
+        }
+		
+
 
         public double[][] Recalc(List<Basis> basises, double[][] regressors)
         {

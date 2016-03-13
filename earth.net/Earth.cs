@@ -44,14 +44,6 @@ namespace earth.net
             return _variables;
         }
 
-        public double[][] Values
-        {
-            get
-            {
-                if (_values == null) _values = GetX("");
-                return _values;
-            }
-        }
 
         /// <summary>
         /// Вернуть кололнку типа double
@@ -159,7 +151,7 @@ namespace earth.net
 
                     //There is one restriction put on the formation of model terms: each input
                     //can appear at most once in a product.
-                    for (int j = 0; j < GetRegressors(value).Count; j++)
+                    for (int j = 0; j < m.Regressors[0].Length; j++)
                     {
                         if (m.Basises[i].IsInputAppearsInProduct(j))
                             continue;
@@ -175,13 +167,14 @@ namespace earth.net
 
                         double[][] bData = null;
 
-                        for (int k = 0; k < Values.Length; k++)
+                        for (int k = 0; k < m.Regressors.Length; k++)
                         {
-                            h.Value = Values[k][j];
-                            hReflected.Value = Values[k][j];
+                            h.Value = m.Regressors[k][j];
+                            hReflected.Value = m.Regressors[k][j];
 
                             double rss = m.CheckNewBasisFast(b, bReflected, 0.0, ref bData);
                             //double rss = m.CheckNewBasis(b, bReflected);
+                            //double rss = m.CheckNewBasisCholessky(b, bReflected);
                             if (rss < PotentialRSS)
                             {
                                 PotentialRSS = rss;
@@ -195,7 +188,7 @@ namespace earth.net
                     if (betterFound)
                     {
                         solutions++;
-                        Hinge winnerHinge = new Hinge(varN, Values[valN][varN]);
+                        Hinge winnerHinge = new Hinge(varN, m.Regressors[valN][varN]);
                         Hinge winnerHingeReflected = winnerHinge.ConstructNegative();
 
                         Basis winnerBasis = new Basis(m.Basises[i], winnerHinge);
