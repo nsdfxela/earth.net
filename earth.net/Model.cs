@@ -9,6 +9,8 @@ namespace earth.net
 {
     public class Model
     {
+
+
         public Model(double[][] x, double[] y)
         {
             Regressors = x;
@@ -109,7 +111,9 @@ namespace earth.net
                 return tempNewRSS;
         }
 
-        public double CheckNewBasisFast(Basis basis, Basis basisReflected, double newKnotVal, ref double [][] transformedData)
+        public static int _warns = 0;
+
+        public double CheckNewBasisFast(Basis basis, Basis basisReflected, double newKnotVal, Func<double[][], double[], double[]> solver,ref double [][] transformedData)
         {
             if (transformedData == null)
             {
@@ -121,26 +125,48 @@ namespace earth.net
             else
             {
 
-                int ncol = transformedData[0].Length;
+                int ncol = transformedData[0].Length-2;
                 int nrow = transformedData.Length;
+
+                bool b1Warning = true;
+                bool b2Warning = true;
+
+                double b1Temp = 0.0;
+                double b2Temp = 0.0;
 
                 for (int i = 0; i < nrow; i++)
                 {
-                    double[] newdata = new double[ncol + 2];
-
-                    for (int j = 0; j < ncol; j++)
+                    transformedData[i][ncol] = basis.Calc(Regressors[i]);
+                    transformedData[i][ncol + 1] = basisReflected.Calc(Regressors[i]);
+                    if (b1Warning)
                     {
-                        newdata[j] = transformedData[i][j];
+                        b1Warning = b1Temp == transformedData[i][ncol];
+                        b1Temp = transformedData[i][ncol];
                     }
-                    newdata[ncol] = basis.Calc(Regressors[i]);
-                    newdata[ncol + 1] = basisReflected.Calc(Regressors[i]);
+
+                    if (b2Warning)
+                    {
+                        b2Warning = b2Temp == transformedData[i][ncol];
+                        b2Temp = transformedData[i][ncol];
+                    }
+                    
                 }
+
+                if (b1Warning || b2Warning)
+                    return double.MaxValue;
+                    //Console.WriteLine("Warn {0} {1} !" + ++_warns, b1Temp, b2Temp);
             }
 
-            var tempNewRegressionCoefficients = RegressionToolkit.CalculateLeastSquares(transformedData, Y);
+            //var tempNewRegressionCoefficients = RegressionToolkit.CalculateLeastSquares(transformedData, Y);
+            var tempNewRegressionCoefficients = solver(transformedData, Y);
             var tempNewpredicted = RegressionToolkit.Predict(tempNewRegressionCoefficients.ToArray(), transformedData);
             var tempNewRSS = RegressionToolkit.CalcRSS(tempNewpredicted.ToArray(), Y);
             return tempNewRSS;
+        }
+
+        public double CheckNewBasisCholeskyFast(Basis basis, Basis basisReflected, double newKnotVal, ref double[][] transformedData)
+        {
+            return CheckNewBasisFast(basis, basisReflected, newKnotVal, PrepareAndCalcCholessky, ref transformedData);
         }
 
         public double[] PrepareAndCalcCholessky(double[][] x, double [] y)
@@ -177,6 +203,7 @@ namespace earth.net
 
             return tempNewRSS;
         }
+        
 
         public void Recalc()
         {

@@ -38,6 +38,8 @@ namespace earth.net
             List<double> result = resultMatrix.Column(0).ToList();
             return result;
         }
+        public static int _good = 0;
+        public static int _bad = 0;
 
         public static List<double> CalculateCholesskyRegression(double [][] v, double [] c)
         {
@@ -46,12 +48,12 @@ namespace earth.net
             try
             {
                 slopes = MultipleRegression.NormalEquations(v, c, false);
-                Console.WriteLine("Ok!");
+                Console.WriteLine("Ok! " + ++_good);
             }
             catch
             {
                 slopes = MultipleRegression.QR(v, c);
-                Console.WriteLine("Bad!");
+                Console.WriteLine("Bad! " + ++_bad);
             }
             if (slopes.Any(s => double.IsNaN(s)))
             {

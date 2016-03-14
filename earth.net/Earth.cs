@@ -173,7 +173,10 @@ namespace earth.net
                             h.Value = m.Regressors[k][j];
                             hReflected.Value = m.Regressors[k][j];
 
-                            double rss = m.CheckNewBasisCholessky(b, bReflected);
+                            //double rss = m.CheckNewBasisCholessky(b, bReflected);
+                            double rss = m.CheckNewBasisCholeskyFast(b, bReflected, 0.0, ref bData);
+                            if (rss == double.MaxValue)
+                                break;
                             Console.WriteLine("Cholessky rss = " + rss);
                             // rss = m.CheckNewBasisFast(b, bReflected, 0.0, ref bData);
                              //Console.WriteLine("Fast rss = " + rss);
@@ -254,6 +257,9 @@ namespace earth.net
             }
             while (true);
 
+            Console.WriteLine(Model._warns);
+            Console.WriteLine(RegressionToolkit._bad);
+            Console.WriteLine(RegressionToolkit._good);
                 return new List<double>();
         }
     }
