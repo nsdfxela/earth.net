@@ -48,12 +48,11 @@ namespace earth.net
             try
             {
                 slopes = MultipleRegression.NormalEquations(v, c, false);
-                Console.WriteLine("Ok! " + ++_good);
             }
             catch
             {
                 slopes = MultipleRegression.QR(v, c);
-                Console.WriteLine("Bad! " + ++_bad);
+                Console.WriteLine("Unable to solve with Cholessky" + ++_bad);
             }
             if (slopes.Any(s => double.IsNaN(s)))
             {

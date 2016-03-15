@@ -167,6 +167,8 @@ namespace earth.net
                         Basis bReflected = new Basis(m.Basises[i], hReflected);
 
                         double[][] bData = null;
+                        
+                        int[] kOrdered = m.GetArrayOrder(m.GetRegressorsColumn(j));
 
                         for (int k = 0; k < m.Regressors.Length; k++)
                         {
@@ -174,9 +176,10 @@ namespace earth.net
                             hReflected.Value = m.Regressors[k][j];
 
                             //double rss = m.CheckNewBasisCholessky(b, bReflected);
-                            double rss = m.CheckNewBasisCholeskyFast(b, bReflected, 0.0, ref bData);
+                            //double rss = m.CheckNewBasisCholeskyFast(b, bReflected, 0.0, ref bData);
+                            double rss = m.CheckNewBasisEquation52(b, bReflected, 0.0, ref bData);
                             if (rss == double.MaxValue)
-                                break;
+                                continue;
                             Console.WriteLine("Cholessky rss = " + rss);
                             // rss = m.CheckNewBasisFast(b, bReflected, 0.0, ref bData);
                              //Console.WriteLine("Fast rss = " + rss);

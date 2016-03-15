@@ -113,7 +113,7 @@ namespace earth.net
 
         public static int _warns = 0;
 
-        public double CheckNewBasisFast(Basis basis, Basis basisReflected, double newKnotVal, Func<double[][], double[], double[]> solver,ref double [][] transformedData)
+        public double CheckNewBasisFast(Basis basis, Basis basisReflected, double newKnotVal, Func<double[][], double[], double[]> solver, ref double [][] transformedData)
         {
             if (transformedData == null)
             {
@@ -169,7 +169,15 @@ namespace earth.net
             return CheckNewBasisFast(basis, basisReflected, newKnotVal, PrepareAndCalcCholessky, ref transformedData);
         }
 
-        public double[] PrepareAndCalcCholessky(double[][] x, double [] y)
+        public double[] GetRegressorsColumn(int c)
+        {
+            double [] result = new double[Regressors.Length];
+            for (int i = 0; i < Regressors.Length; i++)
+                result[i] = Regressors[i][c];
+            return result.ToArray();
+        }
+
+        public double[] PrepareAndCalcCholessky(double[][] x, double[] y)
         {
             double[] bMeans;
 
@@ -256,8 +264,28 @@ namespace earth.net
             }
             return v;
         }
-		
 
+
+        private class comparerArrayOrder : IComparer<KeyValuePair<double, int>>
+        {
+            public int Compare(KeyValuePair<double, int> x, KeyValuePair<double, int> y)
+            {
+                int c = x.Key.CompareTo(y.Key);
+
+                if (c == 0)
+                    return (x.Value.CompareTo(y.Value));
+                else return c;
+            }
+        }
+
+        public int[] GetArrayOrder(double[] x)
+        {
+            var uns = x.ToList();
+            SortedDictionary<KeyValuePair<double, int>, int> t = new SortedDictionary<KeyValuePair<double, int>, int>(new comparerArrayOrder());
+            for (int i = 0; i < x.Length; i++)
+                t.Add(new KeyValuePair<double, int>(x[i], i), i);
+            return t.Values.ToArray();
+        }
 
         public double[][] Recalc(List<Basis> basises, double[][] regressors)
         {
@@ -274,6 +302,11 @@ namespace earth.net
                 }
             }
             return resultDataset;
+        }
+
+        internal double CheckNewBasisEquation52(Basis b, Basis bReflected, double p, ref double[][] bData)
+        {
+            throw new NotImplementedException();
         }
     }
 }
