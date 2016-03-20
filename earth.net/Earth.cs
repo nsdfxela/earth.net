@@ -188,102 +188,128 @@ namespace earth.net
                         {
                             //каков индекс в регрессорах k по убыванию элемента
                             int ki0 = kOrdered[k];
-                            int ki1 = kOrdered[k + 1]   ; //kOrdered[ki1] должно быть больше или равно нулевого, у нас же убывающий порядок
-                            
+                            int ki1 = kOrdered[k + 1]; //kOrdered[ki1] должно быть больше или равно нулевого, у нас же убывающий порядок
+
+                            //значения рассматриваемого узла к0 и "старшего" относительно него к1 
+                            //(в нотации Фридмана k0 это t, а k1 это u)
                             double k0 = m.Regressors[ki0][j];
                             double k1 = m.Regressors[ki1][j];
 
                             double kdiff = k1 - k0;
-                            
+
                             if (kdiff < 0)
                                 throw new Exception("t should be <= u !");
 
+                            //меняем кноты у хинджей
                             h.Value = k0;
                             hReflected.Value = k0;
+                            //и пересчитываем базисы с учетом этого (тут это кстати не обязательно делать)
+                            tBx = m.Recalc(tempbs, m.Regressors);
 
+                            //RSS, посчитанный для заданного i, j, k
                             double rss;
+                            //колонка для базисной функции (x-t)
                             int newColumn1 = tempbs.Count - 2;
+                            //колонка для базисной функции (t-x)
                             int newColumn2 = tempbs.Count - 1;
 
+                            #region updateC
                             //if(m.RegressorsTransformed[0].Length > 6)
-                                //вычисление C по формуле 52
-                                double yAvg = m.Y.Average();
-                                //строчки
-                                
-                                for (int ic = 0; ic < tBx.Length; ic++)
+                            //вычисление C по формуле 52
+                            double yAvg = m.Y.Average();
+                            //строчки
+
+                            for (int ic = 0; ic < tBx.Length; ic++)
+                            {
+                                double vk = m.Regressors[ic][j];
+                                //столбцы
+                                for (int jc = newColumn1; jc < tBx[ic].Length; jc++)
                                 {
-                                    double vk = m.Regressors[ic][j];
-                                    //столбцы
-                                    for (int jc = newColumn1; jc < tBx[ic].Length; jc++)
+                                    if (jc == newColumn1)
                                     {
-                                        if (jc == newColumn1)
-                                        {
-                                            if (vk <= k0)
-                                                c[jc] += 0;
-                                            else if (vk > k0 && vk < k1)
-                                                c[jc] += (m.Y[ic] - yAvg) * (vk - k0) * m.Basises[i].Calc(m.Regressors[ic]); //tBx[ic][jc];
-                                            else
-                                                c[jc] += kdiff * (m.Y[ic] - yAvg) * m.Basises[i].Calc(m.Regressors[ic]);//tBx[ic][jc];
-                                        }
+                                        if (vk <= k0)
+                                            c[jc] += 0;
+                                        else if (vk > k0 && vk < k1)
+                                            c[jc] += (m.Y[ic] - yAvg) * (vk - k0) * m.Basises[i].Calc(m.Regressors[ic]); //tBx[ic][jc];
                                         else
-                                        {
-                                            if (vk >= k1)
-                                                c[jc] += 0;
-                                            else if (vk > k0 && vk < k1)
-                                                c[jc] += (m.Y[ic] - yAvg) * (k0 - vk) * m.Basises[i].Calc(m.Regressors[ic]);                                        
-                                            else
-                                                c[jc] += (k0 - k1) * (m.Y[ic] - yAvg) * m.Basises[i].Calc(m.Regressors[ic]);
-                                        }
-                                        ////По идее мы можем посчитать базисы быстро и обычно и они должны сойтись
-                                        //    double a = 0.0;
-                                        //    double bt = 0.0;
+                                            c[jc] += kdiff * (m.Y[ic] - yAvg) * m.Basises[i].Calc(m.Regressors[ic]);//tBx[ic][jc];
+                                    }
+                                    else
+                                    {
+                                        if (vk >= k1)
+                                            c[jc] += 0;
+                                        else if (vk > k0 && vk < k1)
+                                            c[jc] += (m.Y[ic] - yAvg) * (k0 - vk) * m.Basises[i].Calc(m.Regressors[ic]);
+                                        else
+                                            c[jc] += (k0 - k1) * (m.Y[ic] - yAvg) * m.Basises[i].Calc(m.Regressors[ic]);
+                                    }
 
-                                        //    double _vk = vk;
-                                        //    double _k0 = k0;
-                                        //    double _k1 = k1;
 
-                                        //    //if (vk <= _k0)
-                                        //    //    a = 0;
-                                        //    //else if (_vk > _k0 && _vk < _k1)
-                                        //    //    a = (_vk - _k0); //tBx[ic][jc];                                        
-                                        //    //else
-                                        //    //    a = kdiff;
+                                    ////По идее мы можем посчитать базисы быстро и обычно и они должны сойтись
+                                    //    double a = 0.0;
+                                    //    double bt = 0.0;
 
-                                        //    if (vk >= _k1)
-                                        //        a = 0;
-                                        //    else if (_vk > _k0 && _vk < _k1)
-                                        //        a = ( _k0 - _vk ); //tBx[ic][jc];                                        
-                                        //    else
-                                        //        a = k0 - k1;
+                                    //    double _vk = vk;
+                                    //    double _k0 = k0;
+                                    //    double _k1 = k1;
 
-                                        //    var hu = new Hinge((int)h.Variable, k1).ConstructNegative();
-                                        //    bt = hReflected.Calc(m.Regressors[ic][j]) - hu.Calc(m.Regressors[ic][j]);
-                                        //    if (Math.Abs(a - bt) >= 0.01)
-                                        //        Console.WriteLine("DIFF: " + (a - bt));
+                                    //    //if (vk <= _k0)
+                                    //    //    a = 0;
+                                    //    //else if (_vk > _k0 && _vk < _k1)
+                                    //    //    a = (_vk - _k0); //tBx[ic][jc];                                        
+                                    //    //else
+                                    //    //    a = kdiff;
 
-                                    }                                     
+                                    //    if (vk >= _k1)
+                                    //        a = 0;
+                                    //    else if (_vk > _k0 && _vk < _k1)
+                                    //        a = ( _k0 - _vk ); //tBx[ic][jc];                                        
+                                    //    else
+                                    //        a = k0 - k1;
+
+                                    //    var hu = new Hinge((int)h.Variable, k1).ConstructNegative();
+                                    //    bt = hReflected.Calc(m.Regressors[ic][j]) - hu.Calc(m.Regressors[ic][j]);
+                                    //    if (Math.Abs(a - bt) >= 0.01)
+                                    //        Console.WriteLine("DIFF: " + (a - bt));
+
                                 }
-                                tBx = m.Recalc(tempbs, m.Regressors);
-                                var cHat = m.__calcC(tBx);
+                            }
 
-                                //Console.WriteLine(__ToString(tBx));
-                                if (Math.Abs(cHat[newColumn1] - c[newColumn1]) > 0.001)
-                                    Console.WriteLine("SHIT");
-                                if (Math.Abs(cHat[newColumn2] - c[newColumn2]) > 0.001)
-                                    Console.WriteLine("SHIT");
+                            #endregion
 
-                            
+                            //пересчитывать базисы по-любому приходится, потому что без них не посчитать yhat
+                            tBx = m.Recalc(tempbs, m.Regressors);
+                            //Так вектор C определяется по-старинке, медленно
+                            var cHat = m.__calcC(tBx);
+                            double[] means;
 
-                            //double rss = m.CheckNewBasisCholessky(b, bReflected);
-                             rss = m.CheckNewBasisCholeskyFast(b, bReflected, 0.0, ref bData);
-                            
+
+                            //Вычисляем RSS на основе "по-модному" определенного вектора C
+                            var v = m.__calcV(tBx, out means);
+                            var coefficients = m.PrepareAndCalcCholessky(v, cHat, means, yAvg);
+                            var tempNewpredicted = RegressionToolkit.Predict(coefficients.ToArray(), tBx);
+                            rss = RegressionToolkit.CalcRSS(tempNewpredicted.ToArray(), m.Y);
+
+
+                            //Это используется при отладке, чтобы определить, отличается ли 
+                            //вычисленные по 52 формуле значения от вычисленных "в лоб"
+                            //Console.WriteLine(__ToString(tBx));
+                            if (Math.Abs(cHat[newColumn1] - c[newColumn1]) > 0.001)
+                                Console.WriteLine("SHIT");
+                            if (Math.Abs(cHat[newColumn2] - c[newColumn2]) > 0.001)
+                                Console.WriteLine("SHIT");
+
+
+                            //следующие 2 закомментированные строчки - разные попытки реализовать вычисление RSS Для заданных i j k
+                            //rss = m.CheckNewBasisCholessky(b, bReflected);
+                            //rss = m.CheckNewBasisCholeskyFast(b, bReflected, 0.0, ref bData);
+                            //rss = m.CheckNewBasisFast(b, bReflected, 0.0, ref bData);
+                            //rss = m.CheckNewBasis(b, bReflected);
+
                             if (rss == double.MaxValue)
                                 continue;
                             Console.WriteLine("Cholessky rss = " + rss);
-                            // rss = m.CheckNewBasisFast(b, bReflected, 0.0, ref bData);
-                             //Console.WriteLine("Fast rss = " + rss);
-                            //double rss = m.CheckNewBasis(b, bReflected);
-                            
+
                             if (rss < PotentialRSS)
                             {
                                 PotentialRSS = rss;
@@ -354,7 +380,7 @@ namespace earth.net
                 }
                 m.RemoveBasisAt(lowestGCVIndex);
                 
-                if (m.Basises.Count == 3)
+                if (m.Basises.Count == 4)
                     break;
             }
             while (true);

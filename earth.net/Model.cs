@@ -185,6 +185,20 @@ namespace earth.net
             return result.ToArray();
         }
 
+        public double[] PrepareAndCalcCholessky(double[][] v, double[] c, double[] means, double yAverage)
+        {
+            for (int i = 0; i < v.Length; i++)
+                v[i][i] += 0.001;
+
+            var regressionCoefficients = RegressionToolkit.CalculateCholesskyRegression(v, c);
+            regressionCoefficients[0] = yAverage;
+
+            for (int i = 1; i < regressionCoefficients.Count; i++)
+                regressionCoefficients[0] -= regressionCoefficients[i] * means[i];
+
+            return regressionCoefficients.ToArray();
+        }
+
         public double[] PrepareAndCalcCholessky(double[][] x, double[] y)
         {
             double[] bMeans;
@@ -192,16 +206,7 @@ namespace earth.net
             var v = __calcV(x, out bMeans);
             var c = __calcC(x);
 
-            for (int i = 0; i < v.Length; i++)
-                v[i][i] += 0.001;
-
-            var regressionCoefficients = RegressionToolkit.CalculateCholesskyRegression(v, c);
-            regressionCoefficients[0] = y.Average();
-
-            for (int i = 1; i < regressionCoefficients.Count; i++)
-                regressionCoefficients[0] -= regressionCoefficients[i] * bMeans[i];
-
-            return regressionCoefficients.ToArray();
+            return PrepareAndCalcCholessky(v, c, bMeans, y.Average());
         }
 
         public double CheckNewBasisCholessky(Basis basis, Basis basisReflected)
