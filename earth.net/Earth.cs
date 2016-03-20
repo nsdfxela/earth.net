@@ -180,6 +180,7 @@ namespace earth.net
                         List<Basis> tempbs = new List<Basis>();
                         tempbs.AddRange(m.Basises);
                         tempbs.Add(b);
+                        tempbs.Add(bReflected);
                         var tBx = m.Recalc(tempbs, m.Regressors);
                         var c = m.__calcC(tBx);
                         
@@ -199,19 +200,13 @@ namespace earth.net
 
                             h.Value = k0;
                             hReflected.Value = k0;
-                            tBx = m.Recalc(tempbs, m.Regressors);
 
                             double rss;
                             int newColumn1 = tempbs.Count - 2;
                             int newColumn2 = tempbs.Count - 1;
 
-                            if(m.RegressorsTransformed[0].Length > 4)
-                            {  
+                            //if(m.RegressorsTransformed[0].Length > 6)
                                 //вычисление C по формуле 52
-                                
-
-                                //c[newColumn1] = 0;
-                                //c[newColumn2] = 0;
                                 double yAvg = m.Y.Average();
                                 //строчки
                                 
@@ -221,44 +216,61 @@ namespace earth.net
                                     //столбцы
                                     for (int jc = newColumn1; jc < tBx[ic].Length; jc++)
                                     {
-
-                                        if (vk <= k0)
-                                            c[jc] += 0;
-                                        else if (vk > k0 && vk < k1)
-                                            c[jc] += (m.Y[ic] - yAvg) * (vk - k0) * m.Basises[i].Calc(m.Regressors[ic]); //tBx[ic][jc];
-                                        //c[jc] += (m.Y[ic] - yAvg) * tBx[ic][jc];
+                                        if (jc == newColumn1)
+                                        {
+                                            if (vk <= k0)
+                                                c[jc] += 0;
+                                            else if (vk > k0 && vk < k1)
+                                                c[jc] += (m.Y[ic] - yAvg) * (vk - k0) * m.Basises[i].Calc(m.Regressors[ic]); //tBx[ic][jc];
+                                            else
+                                                c[jc] += kdiff * (m.Y[ic] - yAvg) * m.Basises[i].Calc(m.Regressors[ic]);//tBx[ic][jc];
+                                        }
                                         else
-                                            c[jc] += kdiff * m.Basises[i].Calc(m.Regressors[ic]);//tBx[ic][jc];
-                                        //c[jc] += (m.Y[ic] - yAvg) * tBx[ic][jc];
+                                        {
+                                            if (vk >= k1)
+                                                c[jc] += 0;
+                                            else if (vk > k0 && vk < k1)
+                                                c[jc] += (m.Y[ic] - yAvg) * (k0 - vk) * m.Basises[i].Calc(m.Regressors[ic]);                                        
+                                            else
+                                                c[jc] += (k0 - k1) * (m.Y[ic] - yAvg) * m.Basises[i].Calc(m.Regressors[ic]);
+                                        }
+                                        ////По идее мы можем посчитать базисы быстро и обычно и они должны сойтись
+                                        //    double a = 0.0;
+                                        //    double bt = 0.0;
 
+                                        //    double _vk = vk;
+                                        //    double _k0 = k0;
+                                        //    double _k1 = k1;
 
+                                        //    //if (vk <= _k0)
+                                        //    //    a = 0;
+                                        //    //else if (_vk > _k0 && _vk < _k1)
+                                        //    //    a = (_vk - _k0); //tBx[ic][jc];                                        
+                                        //    //else
+                                        //    //    a = kdiff;
 
-                                        //По идее мы можем посчитать базисы быстро и обычно и они должны сойтись
-                                        double a = 0.0;
-                                        double bt = 0.0;
-                                        
-                                        if (vk <= k0)
-                                            a = 0;
-                                        else if (vk > k0 && vk < k1)
-                                            a = (vk - k0); //tBx[ic][jc];                                        
-                                        else
-                                            a = kdiff;
+                                        //    if (vk >= _k1)
+                                        //        a = 0;
+                                        //    else if (_vk > _k0 && _vk < _k1)
+                                        //        a = ( _k0 - _vk ); //tBx[ic][jc];                                        
+                                        //    else
+                                        //        a = k0 - k1;
 
-                                        var hu = new Hinge((int)h.Variable, k1);
-                                        bt = h.Calc(m.Regressors[ic][j]) - hu.Calc(m.Regressors[ic][j]);
-                                        if(Math.Abs(a - bt) >= 0.01)
-                                        Console.WriteLine("DIFF: " + (a - bt));
+                                        //    var hu = new Hinge((int)h.Variable, k1).ConstructNegative();
+                                        //    bt = hReflected.Calc(m.Regressors[ic][j]) - hu.Calc(m.Regressors[ic][j]);
+                                        //    if (Math.Abs(a - bt) >= 0.01)
+                                        //        Console.WriteLine("DIFF: " + (a - bt));
 
                                     }                                     
                                 }
-
+                                tBx = m.Recalc(tempbs, m.Regressors);
                                 var cHat = m.__calcC(tBx);
 
+                                //Console.WriteLine(__ToString(tBx));
                                 if (Math.Abs(cHat[newColumn1] - c[newColumn1]) > 0.001)
                                     Console.WriteLine("SHIT");
                                 if (Math.Abs(cHat[newColumn2] - c[newColumn2]) > 0.001)
                                     Console.WriteLine("SHIT");
-                            }
 
                             
 
@@ -351,6 +363,18 @@ namespace earth.net
             Console.WriteLine(RegressionToolkit._bad);
             Console.WriteLine(RegressionToolkit._good);
                 return new List<double>();
+        }
+
+        private string __ToString(double [][] m)
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < m.Length; i++)
+            {
+                for(int j = 0;  j < m[0].Length; j++)
+                    Console.Write(String.Format(" {0,7} ", m[i][j].ToString("F2") ));
+                Console.WriteLine();
+            }
+            return sb.ToString();
         }
     }
 }
