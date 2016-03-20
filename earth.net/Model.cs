@@ -177,6 +177,14 @@ namespace earth.net
             return result.ToArray();
         }
 
+        public double[] GetRegressorsTransformedColumn(int c)
+        {
+            double[] result = new double[RegressorsTransformed.Length];
+            for (int i = 0; i < RegressorsTransformed.Length; i++)
+                result[i] = RegressorsTransformed[i][c];
+            return result.ToArray();
+        }
+
         public double[] PrepareAndCalcCholessky(double[][] x, double[] y)
         {
             double[] bMeans;
@@ -304,9 +312,36 @@ namespace earth.net
             return resultDataset;
         }
 
-        internal double CheckNewBasisEquation52(Basis b, Basis bReflected, double p, ref double[][] bData)
+        internal double __CalcCFast(Basis b, Basis bReflected , int k, int iParent, int iFeature ,int mNew, int [] kOrdered, ref double[] c, ref double ybxSum)
         {
-            throw new NotImplementedException();
+            List<Basis> tempNewBasises = new List<Basis>(this.Basises);
+            tempNewBasises.Add(b);
+            tempNewBasises.Add(bReflected);
+            var transformedData = Recalc(tempNewBasises, Regressors);
+
+            var ix0 = kOrdered[k];     //x0
+            var ix1 = kOrdered[k + 1]; //x1
+
+            //int mNew = transformedData[0].Length - 1;
+            
+            var x0 = Regressors[ix0][iFeature];
+            var x1 = Regressors[ix1][iFeature];
+            var bx1 = transformedData[ix1][iParent];
+            var xDelta = x1 - x0;
+
+            if (c == null)
+                c = __calcC(transformedData);
+            else
+            {
+                ybxSum += (Y[ix1] - Y.Average())*bx1;
+                c[mNew] += xDelta * ybxSum;
+            }
+
+            //THE TESTING SHIT
+            var chat = __calcC(transformedData);
+            for (int i = 0; i < c.Length; i++ )
+                Console.WriteLine("{0, 20} {1, 20}", chat[i], c[i]);
+            return 0.0;
         }
     }
 }

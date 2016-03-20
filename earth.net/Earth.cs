@@ -160,6 +160,7 @@ namespace earth.net
                         if (m.Basises[i].HingesCount >= MAX_HINGES_IN_BASIS)
                             break;
 
+
                         Hinge h = new Hinge(j, 0.0);
                         Hinge hReflected = h.ConstructNegative();
 
@@ -169,15 +170,101 @@ namespace earth.net
                         double[][] bData = null;
                         
                         int[] kOrdered = m.GetArrayOrder(m.GetRegressorsColumn(j));
+                        //debug only
+                        var dbg1 = kOrdered.Select(o => m.Regressors[o][j]);
+                        double ot = kOrdered.Select(o => m.Regressors[o][j]).Max();
 
-                        for (int k = 0; k < m.Regressors.Length; k++)
+                        h.Value = ot;
+                        hReflected.Value = ot;
+
+                        List<Basis> tempbs = new List<Basis>();
+                        tempbs.AddRange(m.Basises);
+                        tempbs.Add(b);
+                        var tBx = m.Recalc(tempbs, m.Regressors);
+                        var c = m.__calcC(tBx);
+                        
+                        for (int k = m.Regressors.Length - 2; k >= 0; k--)
                         {
-                            h.Value = m.Regressors[k][j];
-                            hReflected.Value = m.Regressors[k][j];
+                            //каков индекс в регрессорах k по убыванию элемента
+                            int ki0 = kOrdered[k];
+                            int ki1 = kOrdered[k + 1]   ; //kOrdered[ki1] должно быть больше или равно нулевого, у нас же убывающий порядок
+                            
+                            double k0 = m.Regressors[ki0][j];
+                            double k1 = m.Regressors[ki1][j];
+
+                            double kdiff = k1 - k0;
+                            
+                            if (kdiff < 0)
+                                throw new Exception("t should be <= u !");
+
+                            h.Value = k0;
+                            hReflected.Value = k0;
+                            tBx = m.Recalc(tempbs, m.Regressors);
+
+                            double rss;
+                            int newColumn1 = tempbs.Count - 2;
+                            int newColumn2 = tempbs.Count - 1;
+
+                            if(m.RegressorsTransformed[0].Length > 4)
+                            {  
+                                //вычисление C по формуле 52
+                                
+
+                                //c[newColumn1] = 0;
+                                //c[newColumn2] = 0;
+                                double yAvg = m.Y.Average();
+                                //строчки
+                                
+                                for (int ic = 0; ic < tBx.Length; ic++)
+                                {
+                                    double vk = m.Regressors[ic][j];
+                                    //столбцы
+                                    for (int jc = newColumn1; jc < tBx[ic].Length; jc++)
+                                    {
+
+                                        if (vk <= k0)
+                                            c[jc] += 0;
+                                        else if (vk > k0 && vk < k1)
+                                            c[jc] += (m.Y[ic] - yAvg) * (vk - k0) * m.Basises[i].Calc(m.Regressors[ic]); //tBx[ic][jc];
+                                        //c[jc] += (m.Y[ic] - yAvg) * tBx[ic][jc];
+                                        else
+                                            c[jc] += kdiff * m.Basises[i].Calc(m.Regressors[ic]);//tBx[ic][jc];
+                                        //c[jc] += (m.Y[ic] - yAvg) * tBx[ic][jc];
+
+
+
+                                        //По идее мы можем посчитать базисы быстро и обычно и они должны сойтись
+                                        double a = 0.0;
+                                        double bt = 0.0;
+                                        
+                                        if (vk <= k0)
+                                            a = 0;
+                                        else if (vk > k0 && vk < k1)
+                                            a = (vk - k0); //tBx[ic][jc];                                        
+                                        else
+                                            a = kdiff;
+
+                                        var hu = new Hinge((int)h.Variable, k1);
+                                        bt = h.Calc(m.Regressors[ic][j]) - hu.Calc(m.Regressors[ic][j]);
+                                        if(Math.Abs(a - bt) >= 0.01)
+                                        Console.WriteLine("DIFF: " + (a - bt));
+
+                                    }                                     
+                                }
+
+                                var cHat = m.__calcC(tBx);
+
+                                if (Math.Abs(cHat[newColumn1] - c[newColumn1]) > 0.001)
+                                    Console.WriteLine("SHIT");
+                                if (Math.Abs(cHat[newColumn2] - c[newColumn2]) > 0.001)
+                                    Console.WriteLine("SHIT");
+                            }
+
+                            
 
                             //double rss = m.CheckNewBasisCholessky(b, bReflected);
-                            //double rss = m.CheckNewBasisCholeskyFast(b, bReflected, 0.0, ref bData);
-                            double rss = m.CheckNewBasisEquation52(b, bReflected, 0.0, ref bData);
+                             rss = m.CheckNewBasisCholeskyFast(b, bReflected, 0.0, ref bData);
+                            
                             if (rss == double.MaxValue)
                                 continue;
                             Console.WriteLine("Cholessky rss = " + rss);
