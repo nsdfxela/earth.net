@@ -201,7 +201,7 @@ namespace earth.net
 
         public double[] PrepareAndCalcCholessky(double[][] x, double[] y)
         {
-            double[] bMeans;
+            double[] bMeans = null;
 
             var v = __calcV(x, out bMeans);
             var c = __calcC(x);

@@ -182,7 +182,10 @@ namespace earth.net
                         tempbs.Add(b);
                         tempbs.Add(bReflected);
                         var tBx = m.Recalc(tempbs, m.Regressors);
+
+                        double[] vmeans;
                         var c = m.__calcC(tBx);
+                        var v = m.__calcV(tBx, out vmeans);
                         
                         for (int k = m.Regressors.Length - 2; k >= 0; k--)
                         {
@@ -277,29 +280,71 @@ namespace earth.net
 
                             #endregion
 
+                            #region updateV
+                            double[] bHat = new double[tempbs.Count];
+                            for (int mi = 0; mi < tempbs.Count; mi++)
+                                for (int mj = 0; mj < m.Regressors.Length; mj++)
+                                {
+                                    bHat[mi] += tempbs[mi].Calc(m.Regressors[mj])/(double)m.Regressors.Length;
+                                }
+
+
+                            foreach(int cid in new int[] {newColumn1, newColumn2})
+                            for (int vi = 0; vi < tBx.Length; vi++)
+                            {
+                                var bmk = m.Basises[i].Calc(m.Regressors[vi]);
+                                double vk = m.Regressors[vi][j];
+                                
+                                double st = m.GetRegressorsColumn(i).Where(x => x >= k0).Select(x => x - k0).Sum() * bmk;
+                                double su = m.GetRegressorsColumn(i).Where(x => x >= k1).Select(x => x - k1).Sum() * bmk;
+
+                                for (int vj = 0; vj < tBx[0].Length; vj++)
+                                {
+                                    if (vk <= k0)
+                                        v[vj][cid] += 0;
+                                    else if (vk > k0 && vk < k1)
+                                        v[vj][cid] += (bmk - bHat[vj]) * bmk * (vk - k0);
+                                    else
+                                        v[vj][cid] += (bmk - bHat[vj]) * bmk * (k1 - k0); 
+                                }
+                                if (vk <= k0)
+                                    v[cid][cid] += 0;
+                                else if (vk > k0 && vk < k1)
+                                    v[cid][cid] += Math.Pow(bmk, 2.0) * (vk - k0);
+                                else
+                                {
+                                    v[cid][cid] += (k1 - k0) * Math.Pow(bmk, 2.0) * (2 * vk - k0 - k1)
+                                           + (Math.Pow(su, 2.0) - Math.Pow(st, 2.0)) / tBx.Length;
+                                }
+                            }
+                            #endregion
+
+
                             //пересчитывать базисы по-любому приходится, потому что без них не посчитать yhat
                             tBx = m.Recalc(tempbs, m.Regressors);
                             //Так вектор C определяется по-старинке, медленно
-                            var cHat = m.__calcC(tBx);
-                            double[] means;
+                            //var cHat = m.__calcC(tBx);
+                            double [] means = null;
 
 
                             //Вычисляем RSS на основе "по-модному" определенного вектора C
-                            var v = m.__calcV(tBx, out means);
-                            var coefficients = m.PrepareAndCalcCholessky(v, cHat, means, yAvg);
+                            var vhat = m.__calcV(tBx, out means);
+                            var coefficients = m.PrepareAndCalcCholessky(v, c, means, yAvg);
                             var tempNewpredicted = RegressionToolkit.Predict(coefficients.ToArray(), tBx);
                             rss = RegressionToolkit.CalcRSS(tempNewpredicted.ToArray(), m.Y);
 
-
+                            
                             //Это используется при отладке, чтобы определить, отличается ли 
                             //вычисленные по 52 формуле значения от вычисленных "в лоб"
                             //Console.WriteLine(__ToString(tBx));
-                            if (Math.Abs(cHat[newColumn1] - c[newColumn1]) > 0.001)
-                                Console.WriteLine("SHIT");
-                            if (Math.Abs(cHat[newColumn2] - c[newColumn2]) > 0.001)
-                                Console.WriteLine("SHIT");
-
-
+                            //if (Math.Abs(cHat[newColumn1] - c[newColumn1]) > 0.001)
+                            //    Console.WriteLine("SHIT");
+                            //if (Math.Abs(cHat[newColumn2] - c[newColumn2]) > 0.001)
+                            //    Console.WriteLine("SHIT");
+                            for (int _i = 0; _i < v.Length; _i++)
+                                for (int _j = newColumn1; _j < newColumn2; _j++)
+                                    if (Math.Abs(v[_i][_j] - vhat[_i][_j]) > 5)
+                                        Console.WriteLine("SHIT");
                             //следующие 2 закомментированные строчки - разные попытки реализовать вычисление RSS Для заданных i j k
                             //rss = m.CheckNewBasisCholessky(b, bReflected);
                             //rss = m.CheckNewBasisCholeskyFast(b, bReflected, 0.0, ref bData);
