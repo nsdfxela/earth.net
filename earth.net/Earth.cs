@@ -176,8 +176,8 @@ namespace earth.net
                             hReflected.Value = m.Regressors[k][j];
 
                             //double rss = m.CheckNewBasisCholessky(b, bReflected);
-                            //double rss = m.CheckNewBasisCholeskyFast(b, bReflected, 0.0, ref bData);
-                            double rss = m.CheckNewBasisEquation52(b, bReflected, 0.0, ref bData);
+                            double rss = m.CheckNewBasisCholeskyFast(b, bReflected, 0.0, ref bData);
+                            //double rss = m.CheckNewBasisEquation52(b, bReflected, 0.0, ref bData);
                             if (rss == double.MaxValue)
                                 continue;
                             Console.WriteLine("Cholessky rss = " + rss);

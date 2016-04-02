@@ -166,7 +166,8 @@ namespace earth.net
 
         public double CheckNewBasisCholeskyFast(Basis basis, Basis basisReflected, double newKnotVal, ref double[][] transformedData)
         {
-            return CheckNewBasisFast(basis, basisReflected, newKnotVal, PrepareAndCalcCholessky, ref transformedData);
+            //return CheckNewBasisFast(basis, basisReflected, newKnotVal, PrepareAndCalcCholesskyFull, ref transformedData);
+            return CheckNewBasisFast(basis, basisReflected, newKnotVal, PrepareAndCalcCholesskyNewColumns, ref transformedData);
         }
 
         public double[] GetRegressorsColumn(int c)
@@ -177,17 +178,119 @@ namespace earth.net
             return result.ToArray();
         }
 
-        public double[] PrepareAndCalcCholessky(double[][] x, double[] y)
+        /// <summary>
+        /// temp V
+        /// </summary>
+        double[][] _v;
+        /// <summary>
+        /// temp C
+        /// </summary>
+        double[] _c;
+
+        List<Double> xhat = new List<double>();
+
+        double __calcMean(double [][] x, int f)
         {
-            double[] bMeans;
+            double res = 0.0;
+            double len = x.Length;
 
-            var v = __calcV(x, out bMeans);
-            var c = __calcC(x);
+            for (int i = 0; i < x.Length; i++)
+                res += x[i][f];
 
-            for (int i = 0; i < v.Length; i++)
-                v[i][i] += 0.001;
+            
+            return res/len;
+        }
 
-            var regressionCoefficients = RegressionToolkit.CalculateCholesskyRegression(v, c);
+        public double[] PrepareAndCalcCholesskyNewColumns(double[][] x, double[] y)
+        {
+            List<double> MEANSDEBUG = new List<double>();
+            var VDEBUG = __calcV(x, out MEANSDEBUG);
+            //Это должно вызываться после пересчета базисов с новым узлом
+            if (_v.Length != x[0].Length ||
+                _v[0].Length != x[0].Length ||
+                    _c.Length != x[0].Length)
+            { //CALC - V - SLOW
+                _v = __calcV(x, out xhat);
+            }
+            else
+            { //CALC - V - FAST
+                //ПЕРЕСЧИТАТЬ ТОЛЬКО ПОСЛЕДНИЕ ДВА СТОЛБЦА И ПОСЛЕДНИЕ ДВЕ КОЛОНКИ V
+                int f0 = _v.Length - 2;
+                int f1 = _v.Length - 1;
+
+                if (xhat.Count < x[0].Length)
+                {
+                    xhat.Add(0.0);
+                    xhat.Add(0.0);
+                }
+
+                xhat[f0] = __calcMean(x, f0);
+                xhat[f1] = __calcMean(x, f1);
+                //Зануляем то, что будем считать
+                for (int i = f0; i <= f1; i++) //две колонки
+                {
+                    for (int j = 0; j < _v.Length; j++)// все фичи (Bj)
+                    {
+                        _v[i][j] = 0.0;
+                        _v[j][i] = 0.0;
+                    }
+                }
+
+                //считаем
+                for (int k = 0; k < x.Length; k++)
+                {
+
+                    for (int i = f0; i <= f1; i++) //две колонки
+                    {
+                        for (int j = 0; j <= i; j++)// все фичи (Bj)
+                        {
+                            _v[i][j] += x[k][j] * (x[k][i] - xhat[i]);
+                            if (i != j)
+                                _v[j][i] += x[k][i] * (x[k][j] - xhat[j]);
+                        }
+                    }
+                }
+            }
+         
+            //ВЗЯТО ИЗ СТАРОЙ РЕАЛИЗАЦИИ (пока)
+            for (int i = 0; i < _v.Length; i++)
+                _v[i][i] += 0.001;
+
+            //СОПОСТАВЛЕНИЕ
+            //for (int i = 0; i < _v.Length; i++)
+            //    for (int j = 0; j < _v.Length; j++)
+            //    {
+            //        var d1 = _v[i][j] - VDEBUG[i][j];
+            //        var d2 = _v[j][i] - VDEBUG[j][i];
+            //        if (Math.Abs(d1) >= 0.1 || Math.Abs(d2) >= 0.1)
+            //        {
+            //            Console.WriteLine("DEBUG : {0}", d1);
+            //            Console.WriteLine("DEBUG : {0}", d2);
+            //        }
+            //    }
+
+            _c = __calcC(x);
+
+            var regressionCoefficients = RegressionToolkit.CalculateCholesskyRegression(_v, _c);
+            regressionCoefficients[0] = y.Average();
+
+            for (int i = 1; i < regressionCoefficients.Count; i++)
+                regressionCoefficients[0] -= regressionCoefficients[i] * xhat[i];
+
+            return regressionCoefficients.ToArray();
+        }
+
+        public double[] PrepareAndCalcCholesskyFull(double[][] x, double[] y)
+        {
+            List<double> bMeans;
+
+            _v = __calcV(x, out bMeans);
+            _c = __calcC(x);
+
+            for (int i = 0; i < _v.Length; i++)
+                _v[i][i] += 0.001;
+
+            var regressionCoefficients = RegressionToolkit.CalculateCholesskyRegression(_v, _c);
             regressionCoefficients[0] = y.Average();
 
             for (int i = 1; i < regressionCoefficients.Count; i++)
@@ -205,7 +308,7 @@ namespace earth.net
 
             var transformedData = Recalc(tempNewBasises, Regressors);
 
-            var tempNewRegressionCoefficients = PrepareAndCalcCholessky(transformedData, Y);
+            var tempNewRegressionCoefficients = PrepareAndCalcCholesskyFull(transformedData, Y);
             var tempNewpredicted = RegressionToolkit.Predict(tempNewRegressionCoefficients.ToArray(), transformedData);
             var tempNewRSS = RegressionToolkit.CalcRSS(tempNewpredicted.ToArray(), Y);
 
@@ -217,7 +320,7 @@ namespace earth.net
         {
            RegressorsTransformed = Recalc(this.Basises, Regressors);
            //_regressionCoefficients = RegressionToolkit.CalculateLeastSquares(RegressorsTransformed, Y);
-           _regressionCoefficients = PrepareAndCalcCholessky(RegressorsTransformed, Y).ToList();
+           _regressionCoefficients = PrepareAndCalcCholesskyFull(RegressorsTransformed, Y).ToList();
            var predicted = RegressionToolkit.Predict(_regressionCoefficients.ToArray(), RegressorsTransformed);
            _RSS = RegressionToolkit.CalcRSS(predicted.ToArray(), Y);
            _RSq = RegressionToolkit.CalcRSq(predicted.ToArray(), Y);
@@ -240,22 +343,25 @@ namespace earth.net
             return c;
         }
 
-        public double[][] __calcV(double[][] bx, out double [] means)
+        public double[][] __calcV(double[][] bx, out List<Double> means)
         {
             var nFeatures = bx[0].Length;
-            means = new double[nFeatures];
+            means = new List<double>(nFeatures);
+            
+            for (int n = 0; n < nFeatures; n++)
+                means.Add(__calcMean(bx, n));
+
+
             double[][] v = new double[nFeatures][];
             for (int i = 0; i < nFeatures; i++)
                 v[i] = new double[nFeatures];
+
+            
 
             for (int k = 0; k < bx.Length; k++)
             {
                 for (int i = 0; i < nFeatures; i++)
                 {
-                    for (int j = 0; j < bx.Length; j++)
-                        means[i] += bx[j][i];
-                    means[i] = means[i] / bx.Length;
-
                     for (int j = 0; j < nFeatures; j++)
                     {
                         v[i][j] += bx[k][j] * (bx[k][i] - means[i]);
