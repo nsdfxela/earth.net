@@ -187,7 +187,8 @@ namespace earth.net
         /// </summary>
         double[] _c;
 
-        List<Double> xhat = new List<double>();
+        List<Double> xhat = new List<double>(new double[] { 0.0 });
+        
 
         double __calcMean(double [][] x, int f)
         {
@@ -200,29 +201,45 @@ namespace earth.net
             
             return res/len;
         }
+        
+        /// <summary>
+        /// Resize V-mtrx
+        /// </summary>
+        /// <param name="v">initial matrix</param>
+        /// <param name="addCount">number of rows and colls to add</param>
+        /// <returns>resized V</returns>
+        private double[][] ResizeV(double[][] v, int addCount = 2)
+        {
+            int newSize = v.Length + addCount;
+            double[][] newV = new double[newSize][];
+            for (int i = 0; i < newV.Length; i++)
+            {
+                if (i < v.Length)
+                {
+                    newV[i] = v[i];
+                    Array.Resize(ref  newV[i], newSize);
+                }
+                else
+                    newV[i] = new double[newSize];
+            }
+            return newV;
+        }
 
         public double[] PrepareAndCalcCholesskyNewColumns(double[][] x, double[] y)
         {
-            List<double> MEANSDEBUG = new List<double>();
-            var VDEBUG = __calcV(x, out MEANSDEBUG);
             //Это должно вызываться после пересчета базисов с новым узлом
             if (_v.Length != x[0].Length ||
                 _v[0].Length != x[0].Length ||
                     _c.Length != x[0].Length)
-            { //CALC - V - SLOW
+            { 
+                //TODO: Не надо пересчитывать полностью, а только добавленные на предыдущей операции колонки 
                 _v = __calcV(x, out xhat);
             }
             else
-            { //CALC - V - FAST
+            {
                 //ПЕРЕСЧИТАТЬ ТОЛЬКО ПОСЛЕДНИЕ ДВА СТОЛБЦА И ПОСЛЕДНИЕ ДВЕ КОЛОНКИ V
                 int f0 = _v.Length - 2;
                 int f1 = _v.Length - 1;
-
-                if (xhat.Count < x[0].Length)
-                {
-                    xhat.Add(0.0);
-                    xhat.Add(0.0);
-                }
 
                 xhat[f0] = __calcMean(x, f0);
                 xhat[f1] = __calcMean(x, f1);
@@ -250,8 +267,8 @@ namespace earth.net
                         }
                     }
                 }
+
             }
-         
             //ВЗЯТО ИЗ СТАРОЙ РЕАЛИЗАЦИИ (пока)
             for (int i = 0; i < _v.Length; i++)
                 _v[i][i] += 0.001;
@@ -410,9 +427,5 @@ namespace earth.net
             return resultDataset;
         }
 
-        internal double CheckNewBasisEquation52(Basis b, Basis bReflected, double p, ref double[][] bData)
-        {
-            throw new NotImplementedException();
-        }
     }
 }
