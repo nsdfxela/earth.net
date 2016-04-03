@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,16 +12,24 @@ namespace earth.net
     /// </summary>
     public class Basis
     {
+        public Basis Parent;
+
         public int HingesCount
         {
             get { return Hinges.Count; }
         }
 
-        public Basis(Basis parent, Hinge hinge)
+        public Basis(Basis parent, Hinge hinge, int DataSetRows)
         {
             if (parent != null)
                 Hinges.AddRange(parent.Hinges);
-
+            
+            Parent = parent;
+            ht = new double[DataSetRows];
+            for (int h = 0; h < ht.Length; h++)
+                ht[h] = 1.0;
+            htExists = new bool[DataSetRows];
+            
             Hinges.Add(hinge);
         }
 
@@ -40,7 +49,7 @@ namespace earth.net
             return sb.ToString().TrimEnd(new char[] { '*' });
         }
 
-        public Basis(Basis parent, int? variable, double value) : this(parent, new Hinge { Value = value, Variable = variable }) { }
+        public Basis(Basis parent, int? variable, double value, int dataSetRows) : this(parent, new Hinge { Value = value, Variable = variable }, dataSetRows) { }
 
         public double Calc(double[] x)
         {
@@ -51,6 +60,43 @@ namespace earth.net
                 if (xn != null)
                     result *= Hinges[i].Calc(x[(int)xn]);
             }
+            return result;
+        }
+
+
+        //public Hashtable ht = new Hashtable();
+        double [] ht;
+        bool[] htExists;
+
+        private bool _htExists(int v)
+        {
+            return htExists[v];
+        }
+        private void _addToHt(int i, double val)
+        {
+            ht[i] = val;
+            htExists[i] = true;
+        }
+
+        public double CalcFast(double []x, int hash)
+        {
+            
+            double parentResult;
+            if (_htExists(hash))
+                parentResult = ht[hash];
+            else if (Parent == null)
+                return 1.0;
+            else
+            {
+                parentResult = Parent.CalcFast(x, hash);
+                _addToHt(hash, parentResult);
+            }
+
+            double result = 0.0;
+            int iActualHinge = Hinges.Count - 1;
+            int? xn = Hinges[iActualHinge].Variable;
+            if (xn != null)
+                result = parentResult * Hinges[iActualHinge].Calc(x[(int)xn]);
             return result;
         }
 

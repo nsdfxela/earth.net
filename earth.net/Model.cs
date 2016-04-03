@@ -136,8 +136,11 @@ namespace earth.net
 
                 for (int i = 0; i < nrow; i++)
                 {
-                    transformedData[i][ncol] = basis.Calc(Regressors[i]);
-                    transformedData[i][ncol + 1] = basisReflected.Calc(Regressors[i]);
+                    //Вот тут надо переделать с учетом обратного порядка
+                    //transformedData[i][ncol] = basis.Calc(Regressors[i]);
+                    transformedData[i][ncol] = basis.CalcFast(Regressors[i], i);
+                    //transformedData[i][ncol + 1] = basisReflected.Calc(Regressors[i]);
+                    transformedData[i][ncol + 1] = basisReflected.CalcFast(Regressors[i], i);
                     if (b1Warning)
                     {
                         b1Warning = b1Temp == transformedData[i][ncol];
@@ -246,7 +249,7 @@ namespace earth.net
                 //Зануляем то, что будем считать
                 for (int i = f0; i <= f1; i++) //две колонки
                 {
-                    for (int j = 0; j < _v.Length; j++)// все фичи (Bj)
+                    for (int j = 0; j < _v.Length; j++)
                     {
                         _v[i][j] = 0.0;
                         _v[j][i] = 0.0;
@@ -332,7 +335,6 @@ namespace earth.net
             return tempNewRSS;
         }
         
-
         public void Recalc()
         {
            RegressorsTransformed = Recalc(this.Basises, Regressors);

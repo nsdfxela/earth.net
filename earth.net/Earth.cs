@@ -132,9 +132,10 @@ namespace earth.net
             int MAX_HINGES_IN_BASIS = 30;
             int MAX_BASISES = 15;
             double MAX_DELTA_RSS = 0.00000001;
-            
+            int DATASET_ROWS = m.Y.Length;
+
             //B0
-            m.AddBasis(new Basis(null, null, 1.0), null);
+            m.AddBasis(new Basis(null, null, 1.0, DATASET_ROWS), null);
 
             do
             {
@@ -149,6 +150,7 @@ namespace earth.net
                     int varN = 0;
                     int valN = 0;
 
+                    double[][] bData;
 
                     //There is one restriction put on the formation of model terms: each input
                     //can appear at most once in a product.
@@ -163,10 +165,10 @@ namespace earth.net
                         Hinge h = new Hinge(j, 0.0);
                         Hinge hReflected = h.ConstructNegative();
 
-                        Basis b = new Basis(m.Basises[i], h);
-                        Basis bReflected = new Basis(m.Basises[i], hReflected);
+                        Basis b = new Basis(m.Basises[i], h, DATASET_ROWS);
+                        Basis bReflected = new Basis(m.Basises[i], hReflected, DATASET_ROWS);
 
-                        double[][] bData = null;
+                        bData = null;
                         
                         int[] kOrdered = m.GetArrayOrder(m.GetRegressorsColumn(j));
 
@@ -202,8 +204,8 @@ namespace earth.net
                         Hinge winnerHinge = new Hinge(varN, m.Regressors[valN][varN]);
                         Hinge winnerHingeReflected = winnerHinge.ConstructNegative();
 
-                        Basis winnerBasis = new Basis(m.Basises[i], winnerHinge);
-                        Basis winnerBasisReflected = new Basis(m.Basises[i], winnerHingeReflected);
+                        Basis winnerBasis = new Basis(m.Basises[i], winnerHinge, DATASET_ROWS);
+                        Basis winnerBasisReflected = new Basis(m.Basises[i], winnerHingeReflected, DATASET_ROWS);
 
                         m.AddBasis(winnerBasis, winnerBasisReflected);
                         if (m.Basises.Count >= MAX_BASISES)
