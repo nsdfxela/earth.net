@@ -51,6 +51,12 @@ namespace earth.net
 
         public Basis(Basis parent, int? variable, double value, int dataSetRows) : this(parent, new Hinge { Value = value, Variable = variable }, dataSetRows) { }
 
+        
+        /// <summary>
+        /// "Медленная" незамысловатая версия. Просто перебирает все хинджи, считает и умножает друг на друга
+        /// </summary>
+        /// <param name="x">Регрессоры</param>
+        /// <returns></returns>
         public double Calc(double[] x)
         {
             double result = 1.0;
@@ -78,6 +84,13 @@ namespace earth.net
             htExists[i] = true;
         }
 
+        
+        /// <summary>
+        /// "Быстрая" новая версия с кэшированием вычисленных результатов тупо в массиве ht
+        /// </summary>
+        /// <param name="x">Элемент исходного массива регрессоров</param>
+        /// <param name="hash">Индекс элемента исходного массива регрессоров</param>
+        /// <returns></returns>
         public double CalcFast(double []x, int hash)
         {
             

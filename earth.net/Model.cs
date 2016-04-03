@@ -211,9 +211,17 @@ namespace earth.net
         /// <param name="v">initial matrix</param>
         /// <param name="addCount">number of rows and colls to add</param>
         /// <returns>resized V</returns>
-        private double[][] ResizeV(double[][] v, int addCount = 2)
+        public static double[][] ResizeV(double[][] v, int newSize)
         {
-            int newSize = v.Length + addCount;
+            if (v == null)
+            {
+                double[][] nv = new double[newSize][];
+                for (int i = 0; i < newSize; i++)
+                    nv[i] = new double[newSize];
+                return nv;
+            }
+
+            //int newSize = v.Length + addCount;
             double[][] newV = new double[newSize][];
             for (int i = 0; i < newV.Length; i++)
             {
@@ -233,7 +241,8 @@ namespace earth.net
             //Это должно вызываться после пересчета базисов с новым узлом
             if (_v.Length != x[0].Length ||
                 _v[0].Length != x[0].Length ||
-                    _c.Length != x[0].Length)
+                    _c.Length != x[0].Length || 
+                        _v.Length < 3)
             { 
                 //TODO: Не надо пересчитывать полностью, а только добавленные на предыдущей операции колонки 
                 _v = __calcV(x, out xhat);
@@ -339,7 +348,14 @@ namespace earth.net
         {
            RegressorsTransformed = Recalc(this.Basises, Regressors);
            //_regressionCoefficients = RegressionToolkit.CalculateLeastSquares(RegressorsTransformed, Y);
-           _regressionCoefficients = PrepareAndCalcCholesskyFull(RegressorsTransformed, Y).ToList();
+           //regressionCoefficients = PrepareAndCalcCholesskyFull(RegressorsTransformed, Y).ToList();
+           
+            //Задать V нужный размер
+           _v = ResizeV(this._v, RegressorsTransformed[0].Length);
+            //А C можно пересчитать прямо тут
+           _c = __calcC(RegressorsTransformed);
+
+           _regressionCoefficients = PrepareAndCalcCholesskyNewColumns(RegressorsTransformed, Y).ToList();
            var predicted = RegressionToolkit.Predict(_regressionCoefficients.ToArray(), RegressorsTransformed);
            _RSS = RegressionToolkit.CalcRSS(predicted.ToArray(), Y);
            _RSq = RegressionToolkit.CalcRSq(predicted.ToArray(), Y);
@@ -422,7 +438,7 @@ namespace earth.net
                 resultDataset[i] = new double[basises.Count];
                 for (int j = 0; j < basises.Count; j++)
                 {
-                    resultDataset[i][j] = basises[j].Calc(regressors[i]);
+                    resultDataset[i][j] = basises[j].CalcFast(regressors[i], i);
                     //YTransformed[i] += RegressorsTransformed[i][j];
                 }
             }
