@@ -172,8 +172,20 @@ namespace earth.net
                         
                         int[] kOrdered = m.GetArrayOrder(m.GetRegressorsColumn(j));
 
-                        for (int k = 0; k < m.Regressors.Length; k++)
+                        for (int k = m.Regressors.Length - 2; k >= 0; k--)
                         {
+                             //каков индекс в регрессорах k по убыванию элемента
+                             int ki0 = kOrdered[k];
+                             int ki1 = kOrdered[k + 1]   ; //kOrdered[ki1] должно быть больше или равно нулевого, у нас же убывающий порядок
+                             
+                             double k0 = m.Regressors[ki0][j];
+                             double k1 = m.Regressors[ki1][j];
+ 
+                             double kdiff = k1 - k0;
+                             
+                             if (kdiff < 0)
+                                 throw new Exception("t should be <= u !");
+
                             h.Value = m.Regressors[k][j];
                             hReflected.Value = m.Regressors[k][j];
 
