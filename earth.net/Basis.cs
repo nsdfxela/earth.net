@@ -113,6 +113,52 @@ namespace earth.net
             return result;
         }
 
+        public double CalcFastDependedOnPrevious(double[] x, double u, double t, int hash)
+        {
+            double parentResult;
+            if (_htExists(hash))
+                parentResult = ht[hash];
+            else if (Parent == null)
+                return 1.0;
+            else
+            {
+                parentResult = Parent.CalcFast(x, hash);
+                _addToHt(hash, parentResult);
+            }
+
+            double result = 0.0;
+            int iActualHinge = Hinges.Count - 1;
+            int? xn = Hinges[iActualHinge].Variable;
+            if (xn == null) 
+                return parentResult;
+            double xval = x[(int)xn];
+
+                double hingeRes;
+
+                if (Hinges[iActualHinge].Negative)
+                {
+                    if (xval <= t)
+                        hingeRes = t - u;
+                    else if (xval > t && xval < u)
+                        hingeRes = t - xval;
+                    else
+                        hingeRes = 0;
+                }
+                else
+                {
+                    if (xval <= t)
+                        hingeRes = 0.0;
+                    else if (xval > t && xval < u)
+                        hingeRes = xval - t;
+                    else
+                        hingeRes = u - t;
+                }
+                
+
+            result = parentResult * hingeRes;
+            return result;
+        }
+
         public List<Hinge> Hinges = new List<Hinge>();
 
         /// <summary>

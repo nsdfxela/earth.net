@@ -171,7 +171,8 @@ namespace earth.net
                         bData = null;
                         
                         int[] kOrdered = m.GetArrayOrder(m.GetRegressorsColumn(j));
-
+                        m.uValue1 = double.MinValue;
+                        m.uValue2 = double.MinValue;
                         for (int k = m.Regressors.Length - 2; k >= 0; k--)
                         {
                              //каков индекс в регрессорах k по убыванию элемента
@@ -185,12 +186,13 @@ namespace earth.net
                              
                              if (kdiff < 0)
                                  throw new Exception("t should be <= u !");
-
-                            h.Value = m.Regressors[k][j];
-                            hReflected.Value = m.Regressors[k][j];
+                            //k0  -- t
+                            //k1  -- u
+                            h.Value = k0;
+                            hReflected.Value = k0;
 
                             //double rss = m.CheckNewBasisCholessky(b, bReflected);
-                            double rss = m.CheckNewBasisCholeskyFast(b, bReflected, 0.0, ref bData);
+                            double rss = m.CheckNewBasisCholeskyFast(b, bReflected, k1, ref bData);
                             //double rss = m.CheckNewBasisEquation52(b, bReflected, 0.0, ref bData);
                             if (rss == double.MaxValue)
                                 continue;

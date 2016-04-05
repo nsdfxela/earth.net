@@ -112,6 +112,9 @@ namespace earth.net
         }
 
         public static int _warns = 0;
+        
+        public double uValue1 = double.MinValue;
+        public double uValue2 = double.MinValue;
 
         public double CheckNewBasisFast(Basis basis, Basis basisReflected, double newKnotVal, Func<double[][], double[], double[]> solver, ref double [][] transformedData)
         {
@@ -136,11 +139,9 @@ namespace earth.net
 
                 for (int i = 0; i < nrow; i++)
                 {
-                    //Вот тут надо переделать с учетом обратного порядка
-                    //transformedData[i][ncol] = basis.Calc(Regressors[i]);
-                    transformedData[i][ncol] = basis.CalcFast(Regressors[i], i);
-                    //transformedData[i][ncol + 1] = basisReflected.Calc(Regressors[i]);
-                    transformedData[i][ncol + 1] = basisReflected.CalcFast(Regressors[i], i);
+                    transformedData[i][ncol] += basis.CalcFastDependedOnPrevious(Regressors[i], newKnotVal, basis.Hinges[basis.Hinges.Count-1].Value, i);
+                    transformedData[i][ncol+1] += basisReflected.CalcFastDependedOnPrevious(Regressors[i], newKnotVal, basis.Hinges[basis.Hinges.Count - 1].Value, i);
+
                     if (b1Warning)
                     {
                         b1Warning = b1Temp == transformedData[i][ncol];
