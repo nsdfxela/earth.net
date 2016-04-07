@@ -33,12 +33,6 @@ namespace earth.net
             Hinges.Add(hinge);
         }
 
-        public Basis(List<Hinge> parentHinges, Hinge hinge)
-        {
-            Hinges.AddRange(parentHinges);
-            Hinges.Add(hinge);
-        }
-
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
@@ -69,15 +63,9 @@ namespace earth.net
             return result;
         }
 
-
-        //public Hashtable ht = new Hashtable();
         double [] ht;
         bool[] htExists;
 
-        private bool _htExists(int v)
-        {
-            return htExists[v];
-        }
         private void _addToHt(int i, double val)
         {
             ht[i] = val;
@@ -95,7 +83,7 @@ namespace earth.net
         {
             
             double parentResult;
-            if (_htExists(hash))
+            if (htExists[hash])
                 parentResult = ht[hash];
             else if (Parent == null)
                 return 1.0;
@@ -116,7 +104,7 @@ namespace earth.net
         public double CalcFastDependedOnPrevious(double[] x, double u, double t, int hash)
         {
             double parentResult;
-            if (_htExists(hash))
+            if (htExists[hash])
                 parentResult = ht[hash];
             else if (Parent == null)
                 return 1.0;
@@ -170,20 +158,6 @@ namespace earth.net
         internal bool IsInputAppearsInProduct(int variableNumber)
         {
             return Hinges.Any(h => h.Variable == variableNumber);
-        }
-    }
-
-    public class HingePair
-    {
-        Hinge Positive { get; set; }
-        Hinge Negative { get; set; }
-        
-        public HingePair(Hinge positive) : this(positive, positive.ConstructNegative()){ }
-
-        public HingePair(Hinge positive, Hinge negative)
-        {
-            Positive = positive;
-            Negative = negative;
         }
     }
 

@@ -9,8 +9,6 @@ namespace earth.net
 {
     public class Model
     {
-
-
         public Model(double[][] x, double[] y)
         {
             Regressors = x;

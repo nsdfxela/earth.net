@@ -94,37 +94,12 @@ namespace earth.net
             _dt = dt;
         }
 
-        /// <summary>
-        /// Detect if it is enough terms in the model
-        /// </summary>
-        /// <returns></returns>
-        private bool ForwardPassStopCondition()
-        {
-
-            return false;
-        }
-
-        public List<double> CalculateLeastSquares(string ycolName)
-        {
-            var x = GetX(ycolName);
-            var y = GetColumnDouble(ycolName).ToArray();
-
-            return RegressionToolkit.CalculateLeastSquares(x, y);
-        }
-
         Model m ;
 
         public List<double> Predict(string value)
         {
             m = new Model(GetX(value), GetColumnDouble("mpg").ToArray());
             
-            
-            //var c = CalculateLeastSquares("mpg").ToArray();
-            //var predicted = RegressionToolkit.Predict(c, GetX(value));
-            //var mpg = GetColumnDouble("mpg");
-            //var RSS = RegressionToolkit.calcRSS(predicted.ToArray(), mpg.ToArray());
-            //Console.WriteLine(RSS);
-
             //hinge test
             var xs = GetX("mpg");
 
