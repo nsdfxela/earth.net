@@ -11,6 +11,9 @@ namespace earth.net
     {
         static void Main(string[] args)
         {
+            rnet.RNetInterop r = new rnet.RNetInterop();
+            var dtOzone = r.ReadData();
+
             var dt = TestingEnvironment.CreateCarsTable();
             Earth e = new Earth(dt);
             var result =  e.Predict("mpg");
