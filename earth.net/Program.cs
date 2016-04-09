@@ -15,8 +15,8 @@ namespace earth.net
             var dtOzone = r.ReadData();
 
             var dt = TestingEnvironment.CreateCarsTable();
-            Earth e = new Earth(dt);
-            var result =  e.Predict("mpg");
+            Earth e = new Earth(dtOzone);
+            var result =  e.Predict("V4");
 
         }
     }

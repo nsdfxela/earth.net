@@ -17,7 +17,7 @@ namespace earth.net.rnet
             
             var O = engine.Evaluate(@"library(mlbench)
                                     data(Ozone)
-                                    t <- Ozone").AsDataFrame();
+                                    t <- na.omit(Ozone)").AsDataFrame();
             DataTable dt = new DataTable();
             for (int i = 0; i < O.ColumnCount; i++)
             {

@@ -240,7 +240,7 @@ namespace earth.net
             //Это должно вызываться после пересчета базисов с новым узлом
             if (_v.Length != x[0].Length ||
                 _v[0].Length != x[0].Length ||
-                    _c.Length != x[0].Length || 
+                    _c.Length != x[0].Length || xhat.Count!=_v.Length ||
                         _v.Length < 3)
             { 
                 //TODO: Не надо пересчитывать полностью, а только добавленные на предыдущей операции колонки 

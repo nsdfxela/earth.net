@@ -98,25 +98,32 @@ namespace earth.net
 
         public List<double> Predict(string value)
         {
-            m = new Model(GetX(value), GetColumnDouble("mpg").ToArray());
+            m = new Model(GetX(value), GetColumnDouble("V4").ToArray());
             
             //hinge test
-            var xs = GetX("mpg");
+            var xs = GetX("V4");
 
             
-            int MAX_HINGES_IN_BASIS = 30;
+            int MAX_HINGES_IN_BASIS = 3;
             int MAX_BASISES = 15;
-            double MAX_DELTA_RSS = 0.00000001;
+            double MAX_DELTA_RSS = 0.001;
             int DATASET_ROWS = m.Y.Length;
+
+            //finish-flags
+            bool FLAG_RSS_DIFF_LIMIT = false;
+            bool FLAG_HINGE_LENGTH_LIMIT = false;
+            bool FLAG_BASISES_COUNT_LIMIT = false;
+            //
 
             //B0
             m.AddBasis(new Basis(null, null, 1.0, DATASET_ROWS), null);
 
             do
             {
-                int solutions = 0;    
+                int solutions = 0;
 
-                for (int i = 0; i < m.Basises.Count; i++)
+                int bc = m.Basises.Count;
+                for (int i = 0; i < bc; i++)
                 {
                     double PotentialRSS = m.RSS;
 
@@ -171,7 +178,7 @@ namespace earth.net
                             //double rss = m.CheckNewBasisEquation52(b, bReflected, 0.0, ref bData);
                             if (rss == double.MaxValue)
                                 continue;
-                            Console.WriteLine("Cholessky rss = " + rss);
+                            //Console.WriteLine("Cholessky rss = " + rss);
                             // rss = m.CheckNewBasisFast(b, bReflected, 0.0, ref bData);
                              //Console.WriteLine("Fast rss = " + rss);
                             //double rss = m.CheckNewBasis(b, bReflected);
@@ -188,8 +195,8 @@ namespace earth.net
 
                     if (betterFound)
                     {
+                        double rsqBefore = m.RSq;
                         solutions++;
-                        
                         Hinge winnerHinge = new Hinge(varN, m.Regressors[valN][varN]);
                         Hinge winnerHingeReflected = winnerHinge.ConstructNegative();
 
@@ -197,15 +204,28 @@ namespace earth.net
                         Basis winnerBasisReflected = new Basis(m.Basises[i], winnerHingeReflected, DATASET_ROWS);
 
                         m.AddBasis(winnerBasis, winnerBasisReflected);
-                        if (m.Basises.Count >= MAX_BASISES)
+                        if((m.RSq - rsqBefore) < MAX_DELTA_RSS)
+                        {
+                            FLAG_RSS_DIFF_LIMIT = true;
                             break;
+                        }
+                        if (m.Basises.Any(b => b.HingesCount > MAX_HINGES_IN_BASIS))
+                        {
+                            FLAG_HINGE_LENGTH_LIMIT = true;
+                            break;
+                        }
                     }
                 }
                 
 
                 if (solutions == 0) break; //no solutions anymore which decrease RSS
-                if (m.Basises.Count >= MAX_BASISES) break; 
-                if (m.Basises.Any(b => b.HingesCount > MAX_HINGES_IN_BASIS)) break;
+                //if (m.Basises.Count >= MAX_BASISES) break; 
+                
+                if (FLAG_BASISES_COUNT_LIMIT
+                    || FLAG_HINGE_LENGTH_LIMIT
+                    || FLAG_RSS_DIFF_LIMIT)
+                    break;
+                
             }
             while (true);
 
@@ -230,7 +250,8 @@ namespace earth.net
                 Basis[] tempBasises = new Basis[m.Basises.Count];
                 m.Basises.CopyTo(tempBasises);
 
-                for (int i = 1; i < m.Basises.Count; i++)
+                int bc = m.Basises.Count;
+                for (int i = 0; i < bc; i++)
                 {
                     m.RemoveBasisAt(i);
                     if (m.GCV < lowestGCV)
@@ -245,11 +266,10 @@ namespace earth.net
                     //}
                 }
                 m.RemoveBasisAt(lowestGCVIndex);
-                
-                if (m.Basises.Count == 3)
-                    break;
+
+
             }
-            while (true);
+            while (m.Basises.Count > MAX_BASISES);
 
             Console.WriteLine(Model._warns);
             Console.WriteLine(RegressionToolkit._bad);
