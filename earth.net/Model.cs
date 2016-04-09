@@ -267,8 +267,8 @@ namespace earth.net
                 //считаем
                 for (int k = 0; k < x.Length; k++)
                 {
-
-                    for (int i = f0; i <= f1; i++) //две колонки
+                    //parallel version
+                    Parallel.For(f0, f1, (i) => 
                     {
                         for (int j = 0; j <= i; j++)// все фичи (Bj)
                         {
@@ -276,7 +276,17 @@ namespace earth.net
                             if (i != j)
                                 _v[j][i] += x[k][i] * (x[k][j] - xhat[j]);
                         }
-                    }
+                    });
+
+                    //for (int i = f0; i <= f1; i++) //две колонки
+                    //{
+                    //    for (int j = 0; j <= i; j++)// все фичи (Bj)
+                    //    {
+                    //        _v[i][j] += x[k][j] * (x[k][i] - xhat[i]);
+                    //        if (i != j)
+                    //            _v[j][i] += x[k][i] * (x[k][j] - xhat[j]);
+                    //    }
+                    //}
                 }
 
             }
